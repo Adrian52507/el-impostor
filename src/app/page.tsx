@@ -1,65 +1,147 @@
-import Image from "next/image";
+"use client";
+
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Edges, Html } from "@react-three/drei";
+import { useRef, useState } from "react";
+import { Mesh, Group } from "three";
+import { DoubleSide } from "three";
+
+
+function Cube() {
+  const groupRef = useRef<Group>(null!);
+
+  const [hovered, setHovered] = useState(false);
+  const [clicked, setClicked] = useState(false);
+  const [exploding, setExploding] = useState(false);
+  const [showText, setShowText] = useState(false);
+
+  const speed = useRef({
+    x: 0.02 + Math.random() * 0.04,
+    y: 0.02 + Math.random() * 0.04,
+  });
+
+  const [textMounted, setTextMounted] = useState(false);
+  const [textVisible, setTextVisible] = useState(false);
+
+
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    // Hover detiene temporalmente
+    if (hovered && !clicked) {
+      speed.current.x *= 0.92;
+      speed.current.y *= 0.92;
+    }
+
+    if (!hovered && !clicked) {
+      speed.current.x += (0.02 - speed.current.x) * 0.02;
+      speed.current.y += (0.02 - speed.current.y) * 0.02;
+    }
+
+    if (!clicked) {
+      groupRef.current.rotation.x += speed.current.x;
+      groupRef.current.rotation.y += speed.current.y;
+    }
+
+    // CLICK → detener definitivo
+    if (clicked && !exploding) {
+      speed.current.x *= 0.9;
+      speed.current.y *= 0.9;
+
+      groupRef.current.rotation.x += speed.current.x;
+      groupRef.current.rotation.y += speed.current.y;
+
+      if (
+        Math.abs(speed.current.x) < 0.001 &&
+        Math.abs(speed.current.y) < 0.001
+      ) {
+        groupRef.current.rotation.x = 0;
+        groupRef.current.rotation.y = 0;
+        setExploding(true);
+      }
+    }
+
+    // EXPLOSIÓN REAL
+    if (exploding) {
+      groupRef.current.children.forEach((face, i) => {
+        const direction = [
+          [0, 0, 1],
+          [0, 0, -1],
+          [1, 0, 0],
+          [-1, 0, 0],
+          [0, 1, 0],
+          [0, -1, 0],
+        ][i];
+
+        if (!direction) return;
+
+        face.position.x += direction[0] * 0.1;
+        face.position.y += direction[1] * 0.1;
+        face.position.z += direction[2] * 0.1;
+
+        face.rotation.x += 0.1;
+        face.rotation.y += 0.1;
+      });
+
+      setTextMounted(true);
+      // siguiente tick para que el CSS transition haga fade-in
+      setTimeout(() => setTextVisible(true), 20);
+    }
+  });
+
+  const Face = ({ position, rotation }: any) => (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial color="#ffffff" side={DoubleSide} />
+      <Edges scale={1.01} threshold={15} color="black" />
+    </mesh>
+  );
+
+  return (
+    <>
+      {!showText && (
+        <group
+          ref={groupRef}
+          scale={0.8}
+          onPointerOver={() => !clicked && setHovered(true)}
+          onPointerOut={() => !clicked && setHovered(false)}
+          onClick={() => !clicked && setClicked(true)}
+        >
+          <Face position={[0, 0, 0.5]} rotation={[0, 0, 0]} />
+          <Face position={[0, 0, -0.5]} rotation={[0, Math.PI, 0]} />
+          <Face position={[0.5, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
+          <Face position={[-0.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+          <Face position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+          <Face position={[0, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]} />
+        </group>
+      )}
+
+      {textMounted && (
+        <Html center>
+          <div
+            className={[
+              "select-none font-extrabold tracking-wide",
+              "text-white text-5xl",
+              "transition-all duration-900 ease-out",
+              textVisible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-75 translate-y-2",
+            ].join(" ")}
+          >
+            😈
+          </div>
+        </Html>
+      )}
+
+    </>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="w-full h-screen bg-black flex items-center justify-center">
+      <Canvas camera={{ position: [0, 0, 4] }}>
+        <Cube />
+      </Canvas>
+    </main>
   );
 }

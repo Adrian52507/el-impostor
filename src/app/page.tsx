@@ -2,10 +2,9 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges, Text } from "@react-three/drei";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Mesh, Group } from "three";
 import { DoubleSide } from "three";
-
 
 function Cube() {
   const groupRef = useRef<Group>(null!);
@@ -24,23 +23,53 @@ function Cube() {
   const textOpacity = useRef(0);
   const textReady = useRef(false);
 
+  const baseSpeed = useRef({
+    x: 0.03,
+    y: 0.035,
+  });
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioPlayed = useRef(false);
+  const clickTime = useRef(0);  // 👈 NEW: Track click time
 
-  useFrame(() => {
+  // Preload audio safely with useEffect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio("/sounds/reveal.mp3");
+      audioRef.current.preload = "auto";
+      audioRef.current.volume = 0.8;
+    }
+  }, []);
+
+  // FIXED: Direct click handler preserves user gesture
+  const handleClick = useCallback(() => {
+    if (!clicked) {
+      clickTime.current = Date.now();  // 👈 Record click time
+      setClicked(true);
+    }
+  }, [clicked]);
+
+  useFrame((state) => {
     if (!groupRef.current) return;
 
+    const timeSinceClick = Date.now() - clickTime.current;
+
+    // Play audio 1 second after click 👈 NEW
+    if (clicked && !audioPlayed.current && audioRef.current && timeSinceClick >= 1000) {
+      audioRef.current.play().catch((e) => console.error("Audio play failed:", e));
+      audioPlayed.current = true;
+    }
+
     // Hover detiene temporalmente
-    if (hovered && !clicked) {
-      speed.current.x *= 0.92;
-      speed.current.y *= 0.92;
-    }
-
-    if (!hovered && !clicked) {
-      speed.current.x += (0.02 - speed.current.x) * 0.02;
-      speed.current.y += (0.02 - speed.current.y) * 0.02;
-    }
-
     if (!clicked) {
+      if (hovered) {
+        speed.current.x += (0 - speed.current.x) * 0.08;
+        speed.current.y += (0 - speed.current.y) * 0.08;
+      } else {
+        speed.current.x += (baseSpeed.current.x - speed.current.x) * 0.05;
+        speed.current.y += (baseSpeed.current.y - speed.current.y) * 0.05;
+      }
+
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;
     }
@@ -61,16 +90,13 @@ function Cube() {
         groupRef.current.rotation.y = 0;
         setExploding(true);
 
-        // 👇 AGREGA ESTO
         setTimeout(() => {
           textOpacity.current = 0;
           textReady.current = false;
           setShowText(true);
         }, 800);
-
       }
     }
-
 
     // EXPLOSIÓN REAL
     if (exploding) {
@@ -94,11 +120,10 @@ function Cube() {
         face.rotation.y += 0.1;
       });
 
-      // Fade-in + animación suave del texto (SIN state)
+      // Fade-in + animación suave del texto
       if (showText && textRef.current) {
         const mat: any = textRef.current.material;
 
-        // inicializar una sola vez
         if (!textReady.current) {
           mat.transparent = true;
           mat.opacity = 0;
@@ -107,21 +132,15 @@ function Cube() {
           textReady.current = true;
         }
 
-        // subir opacidad
         textOpacity.current = Math.min(textOpacity.current + 0.03, 1);
         mat.opacity = textOpacity.current;
 
-        // escala suave
         textRef.current.scale.x += (1 - textRef.current.scale.x) * 0.08;
         textRef.current.scale.y += (1 - textRef.current.scale.y) * 0.08;
         textRef.current.scale.z += (1 - textRef.current.scale.z) * 0.08;
 
-        // mover hacia delante
         textRef.current.position.z += (0 - textRef.current.position.z) * 0.08;
       }
-
-
-
     }
   });
 
@@ -141,7 +160,7 @@ function Cube() {
           scale={0.5}
           onPointerOver={() => !clicked && setHovered(true)}
           onPointerOut={() => !clicked && setHovered(false)}
-          onClick={() => !clicked && setClicked(true)}
+          onClick={handleClick}
         >
           <Face position={[0, 0, 0.5]} rotation={[0, 0, 0]} />
           <Face position={[0, 0, -0.5]} rotation={[0, Math.PI, 0]} />
@@ -165,11 +184,6 @@ function Cube() {
           😈
         </Text>
       )}
-
-
-
-
-
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Edges, Html } from "@react-three/drei";
+import { Edges, Text } from "@react-three/drei";
 import { useRef, useState } from "react";
 import { Mesh, Group } from "three";
 import { DoubleSide } from "three";
@@ -20,8 +20,9 @@ function Cube() {
     y: 0.02 + Math.random() * 0.04,
   });
 
-  const [textMounted, setTextMounted] = useState(false);
-  const [textVisible, setTextVisible] = useState(false);
+  const textRef = useRef<any>(null);
+  const textOpacity = useRef(0);
+  const textReady = useRef(false);
 
 
 
@@ -59,8 +60,17 @@ function Cube() {
         groupRef.current.rotation.x = 0;
         groupRef.current.rotation.y = 0;
         setExploding(true);
+
+        // 👇 AGREGA ESTO
+        setTimeout(() => {
+          textOpacity.current = 0;
+          textReady.current = false;
+          setShowText(true);
+        }, 800);
+
       }
     }
+
 
     // EXPLOSIÓN REAL
     if (exploding) {
@@ -76,17 +86,42 @@ function Cube() {
 
         if (!direction) return;
 
-        face.position.x += direction[0] * 0.1;
-        face.position.y += direction[1] * 0.1;
-        face.position.z += direction[2] * 0.1;
+        face.position.x += direction[0] * 0.2;
+        face.position.y += direction[1] * 0.2;
+        face.position.z += direction[2] * 0.2;
 
         face.rotation.x += 0.1;
         face.rotation.y += 0.1;
       });
 
-      setTextMounted(true);
-      // siguiente tick para que el CSS transition haga fade-in
-      setTimeout(() => setTextVisible(true), 20);
+      // Fade-in + animación suave del texto (SIN state)
+      if (showText && textRef.current) {
+        const mat: any = textRef.current.material;
+
+        // inicializar una sola vez
+        if (!textReady.current) {
+          mat.transparent = true;
+          mat.opacity = 0;
+          textRef.current.scale.set(0.2, 0.2, 0.2);
+          textRef.current.position.z = -2;
+          textReady.current = true;
+        }
+
+        // subir opacidad
+        textOpacity.current = Math.min(textOpacity.current + 0.03, 1);
+        mat.opacity = textOpacity.current;
+
+        // escala suave
+        textRef.current.scale.x += (1 - textRef.current.scale.x) * 0.08;
+        textRef.current.scale.y += (1 - textRef.current.scale.y) * 0.08;
+        textRef.current.scale.z += (1 - textRef.current.scale.z) * 0.08;
+
+        // mover hacia delante
+        textRef.current.position.z += (0 - textRef.current.position.z) * 0.08;
+      }
+
+
+
     }
   });
 
@@ -103,7 +138,7 @@ function Cube() {
       {!showText && (
         <group
           ref={groupRef}
-          scale={0.8}
+          scale={0.5}
           onPointerOver={() => !clicked && setHovered(true)}
           onPointerOut={() => !clicked && setHovered(false)}
           onClick={() => !clicked && setClicked(true)}
@@ -117,20 +152,23 @@ function Cube() {
         </group>
       )}
 
-      {textMounted && (
-        <Html center>
-          <div
-            className={[
-              "select-none font-extrabold tracking-wide",
-              "text-white text-5xl",
-              "transition-all duration-900 ease-out",
-              textVisible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-75 translate-y-2",
-            ].join(" ")}
-          >
-            😈
-          </div>
-        </Html>
+      {showText && (
+        <Text
+          ref={textRef}
+          position={[0, 0, -2]}
+          fontSize={2.5}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          scale={[0.2, 0.2, 0.2]}
+        >
+          😈
+        </Text>
       )}
+
+
+
+
 
     </>
   );

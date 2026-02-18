@@ -55,7 +55,7 @@ function Cube() {
     const timeSinceClick = Date.now() - clickTime.current;
 
     // Play audio 1 second after click 👈 NEW
-    if (clicked && !audioPlayed.current && audioRef.current && timeSinceClick >= 1800) {
+    if (clicked && !audioPlayed.current && audioRef.current && timeSinceClick >= 1000) {
       audioRef.current.play().catch((e) => console.error("Audio play failed:", e));
       audioPlayed.current = true;
     }

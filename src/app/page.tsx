@@ -30,7 +30,6 @@ function Cube() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioPlayed = useRef(false);
-  const clickTime = useRef(0);  // 👈 NEW: Track click time
 
   // Preload audio safely with useEffect
   useEffect(() => {
@@ -41,24 +40,25 @@ function Cube() {
     }
   }, []);
 
-  // FIXED: Direct click handler preserves user gesture
   const handleClick = useCallback(() => {
     if (!clicked) {
-      clickTime.current = Date.now();  // 👈 Record click time
       setClicked(true);
+
+      // ⏳ Reproducir audio después de 3 segundos
+      setTimeout(() => {
+        if (audioRef.current && !audioPlayed.current) {
+          audioRef.current.play().catch((e) =>
+            console.error("Audio play failed:", e)
+          );
+          audioPlayed.current = true;
+        }
+      }, 1400); // 👈 1400ms = 1.4 segundos
     }
   }, [clicked]);
 
+
   useFrame((state) => {
     if (!groupRef.current) return;
-
-    const timeSinceClick = Date.now() - clickTime.current;
-
-    // Play audio 1 second after click 👈 NEW
-    if (clicked && !audioPlayed.current && audioRef.current && timeSinceClick >= 1000) {
-      audioRef.current.play().catch((e) => console.error("Audio play failed:", e));
-      audioPlayed.current = true;
-    }
 
     // Hover detiene temporalmente
     if (!clicked) {
@@ -76,8 +76,8 @@ function Cube() {
 
     // CLICK → detener definitivo
     if (clicked && !exploding) {
-      speed.current.x *= 0.9;
-      speed.current.y *= 0.9;
+      speed.current.x *= 1;
+      speed.current.y *= 1;
 
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;

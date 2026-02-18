@@ -22,9 +22,10 @@ function Cube() {
 
   const baseSpeed = useRef({ x: 0.03, y: 0.035 });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioReady = useRef(false);
   const audioPlayed = useRef(false);
   const textAnimationRef = useRef(0);
-  const redSweepRef = useRef(0); // NEW: Left-to-right red sweep
+  const redSweepRef = useRef(0);
 
   // Store explosion data for each face
   const faceDataRef = useRef<any[]>([
@@ -36,20 +37,57 @@ function Cube() {
     { velocity: [0, -1, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
   ]);
 
-  // Preload audio
+  // 🎵 IMPROVED AUDIO PRELOADING - Fixes first-load sync issues
   useEffect(() => {
     if (typeof window !== "undefined") {
-      audioRef.current = new Audio("/sounds/reveal.mp3");
-      audioRef.current.preload = "auto";
-      audioRef.current.volume = 0.8;
+      const audio = new Audio("/sounds/reveal.mp3");
+      audio.preload = "auto";
+      audio.volume = 0.8;
+      audio.load(); // Force immediate loading
+
+      // Wait for audio to be FULLY buffered
+      audio.oncanplaythrough = () => {
+        audioReady.current = true;
+        console.log("✅ Audio fully buffered and ready");
+      };
+
+      // Fallback for slower connections
+      audio.onloadeddata = () => {
+        if (!audioReady.current) {
+          audioReady.current = true;
+          console.log("✅ Audio metadata loaded (fallback)");
+        }
+      };
+
+      audioRef.current = audio;
+
+      return () => {
+        audio.oncanplaythrough = null;
+        audio.onloadeddata = null;
+      };
+    }
+  }, []);
+
+  // Prime audio context on first user interaction (fixes autoplay policy)
+  const ensureAudioContext = useCallback(() => {
+    if (typeof window !== "undefined" && audioRef.current && !audioReady.current) {
+      audioRef.current.play().then(() => {
+        audioRef.current?.pause();
+        audioRef.current!.currentTime = 0;
+        audioReady.current = true;
+        console.log("✅ Audio context unlocked");
+      }).catch(() => {
+        // Silent fail - context will unlock on text reveal anyway
+      });
     }
   }, []);
 
   const handleClick = useCallback(() => {
     if (!clicked) {
+      ensureAudioContext(); // Unlock audio context first
       setClicked(true);
     }
-  }, [clicked]);
+  }, [clicked, ensureAudioContext]);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -79,7 +117,7 @@ function Cube() {
         groupRef.current.rotation.y = 0;
         setExploding(true);
         textAnimationRef.current = 0;
-        redSweepRef.current = 0; // Reset sweep
+        redSweepRef.current = 0;
 
         // Initialize random spins for each face
         faceDataRef.current.forEach((face) => {
@@ -100,7 +138,7 @@ function Cube() {
       // Animate faces
       groupRef.current.children.forEach((child: any, index) => {
         if (!child || index >= 6) return;
-
+        
         const faceData = faceDataRef.current[index];
         faceData.time += delta;
 
@@ -128,18 +166,32 @@ function Cube() {
         });
       });
 
-      // SHOW TEXT 0.8s AFTER EXPLOSION STARTS
+      // 🎵 PERFECTLY SYNCED TEXT + AUDIO (0.8s after explosion)
       if (faceDataRef.current[0].time > 0.8 && !showText) {
         setShowText(true);
 
-        // 🎵 PLAY SOUND WHEN TEXT APPEARS
+        // BULLETPROOF AUDIO SYNC - Only plays when fully ready
         if (audioRef.current && !audioPlayed.current) {
-          audioRef.current.currentTime = 0; // Restart if needed
-          audioRef.current.play().catch(console.error);
-          audioPlayed.current = true;
+          if (audioReady.current) {
+            // Audio is fully buffered - play immediately
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch((e) => {
+              console.warn("Audio play failed:", e);
+            });
+            audioPlayed.current = true;
+          } else {
+            // Audio still loading - wait one more frame
+            const checkAudio = () => {
+              if (audioRef.current && audioReady.current && !audioPlayed.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(console.error);
+                audioPlayed.current = true;
+              }
+            };
+            requestAnimationFrame(checkAudio);
+          }
         }
       }
-
     }
 
     // TEXT ANIMATION - Normal fade/scale first, THEN red sweep
@@ -147,27 +199,26 @@ function Cube() {
       textAnimationRef.current += delta;
       const textProgress = Math.min(textAnimationRef.current * 4, 1);
       const eased = 1 - Math.pow(1 - textProgress, 3);
-
+      
       // 🔥 RED SWEEP starts AFTER text is fully sized (textProgress > 0.95)
       let color = "white";
       let extraScale = 1;
-
-      if (textProgress > 0.95) { // Wait for normal animation to complete
-        redSweepRef.current += delta * 3; // Fast sweep speed
-        const sweepProgress = Math.min(redSweepRef.current, 1); // 0 to 1
-
+      
+      if (textProgress > 0.95) {
+        redSweepRef.current += delta * 3;
+        const sweepProgress = Math.min(redSweepRef.current, 1);
+        
         if (sweepProgress < 1) {
-          // LEFT-TO-RIGHT RED SWEEP effect
           const sweepPeak = Math.sin(sweepProgress * Math.PI);
-          color = `hsl(0, ${100 * sweepPeak}%, 50%)`; // Pure RED sweep
-          extraScale = 1 + sweepPeak * 0.3; // Pulse growth
+          color = `hsl(0, ${100 * sweepPeak}%, 50%)`;
+          extraScale = 1 + sweepPeak * 0.3;
         }
       }
-
+      
       const mat = textRef.current.material as any;
       mat.opacity = eased;
       mat.color.set(color);
-
+      
       const scale = (0.2 + 0.8 * eased) * extraScale;
       textRef.current.scale.set(scale, scale, scale);
       textRef.current.position.z = -4 + 2 * eased;

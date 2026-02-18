@@ -48,12 +48,6 @@ function Cube() {
   const handleClick = useCallback(() => {
     if (!clicked) {
       setClicked(true);
-      setTimeout(() => {
-        if (audioRef.current && !audioPlayed.current) {
-          audioRef.current.play().catch(console.error);
-          audioPlayed.current = true;
-        }
-      }, 1400);
     }
   }, [clicked]);
 
@@ -106,7 +100,7 @@ function Cube() {
       // Animate faces
       groupRef.current.children.forEach((child: any, index) => {
         if (!child || index >= 6) return;
-        
+
         const faceData = faceDataRef.current[index];
         faceData.time += delta;
 
@@ -137,7 +131,15 @@ function Cube() {
       // SHOW TEXT 0.8s AFTER EXPLOSION STARTS
       if (faceDataRef.current[0].time > 0.8 && !showText) {
         setShowText(true);
+
+        // 🎵 PLAY SOUND WHEN TEXT APPEARS
+        if (audioRef.current && !audioPlayed.current) {
+          audioRef.current.currentTime = 0; // Restart if needed
+          audioRef.current.play().catch(console.error);
+          audioPlayed.current = true;
+        }
       }
+
     }
 
     // TEXT ANIMATION - Normal fade/scale first, THEN red sweep
@@ -145,15 +147,15 @@ function Cube() {
       textAnimationRef.current += delta;
       const textProgress = Math.min(textAnimationRef.current * 4, 1);
       const eased = 1 - Math.pow(1 - textProgress, 3);
-      
+
       // 🔥 RED SWEEP starts AFTER text is fully sized (textProgress > 0.95)
       let color = "white";
       let extraScale = 1;
-      
+
       if (textProgress > 0.95) { // Wait for normal animation to complete
         redSweepRef.current += delta * 3; // Fast sweep speed
         const sweepProgress = Math.min(redSweepRef.current, 1); // 0 to 1
-        
+
         if (sweepProgress < 1) {
           // LEFT-TO-RIGHT RED SWEEP effect
           const sweepPeak = Math.sin(sweepProgress * Math.PI);
@@ -161,11 +163,11 @@ function Cube() {
           extraScale = 1 + sweepPeak * 0.3; // Pulse growth
         }
       }
-      
+
       const mat = textRef.current.material as any;
       mat.opacity = eased;
       mat.color.set(color);
-      
+
       const scale = (0.2 + 0.8 * eased) * extraScale;
       textRef.current.scale.set(scale, scale, scale);
       textRef.current.position.z = -4 + 2 * eased;

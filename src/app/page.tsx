@@ -75,8 +75,8 @@ function Cube() {
 
     // Slow down after click
     if (clicked && !exploding) {
-      speed.current.x *= 0.95;
-      speed.current.y *= 0.95;
+      speed.current.x *= 0.65;
+      speed.current.y *= 0.65;
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;
 

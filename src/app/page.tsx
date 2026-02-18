@@ -3,12 +3,37 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges, Text } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Mesh, Group } from "three";
+import { Group } from "three";
 import { DoubleSide } from "three";
+
+// 🎯 UNIFIED ANIMATION TIMING CONFIG - TODO DEPENDE DE ESTO
+const ANIMATION_CONFIG = {
+  // Fase 1: Desaceleración después del click
+  slowdownDuration: 0.8,
+  slowdownFactor: 0.65,
+  
+  // Fase 2: Explosión total
+  explosionDuration: 3.0,
+  facesFadeDuration: 1.5,
+  edgesFadeDuration: 1.5,
+  
+  // Fase 3: Texto y sonido
+  textAppearanceDelay: 0.8,
+  textAnimationDuration: 0.25,
+  textRedSweepDelay: 0.95,
+  textRedSweepDuration: 0.5,
+  
+  // Audio
+  audioPlayDelay: 0.8,
+  
+  // Movimiento de caras durante explosión
+  facesExplosionSpeed: (index: number) => 4 + index * 0.5,
+};
 
 function Cube() {
   const groupRef = useRef<Group>(null!);
   const textRef = useRef<any>(null);
+  const edgeRefs = useRef<any[]>(Array(6).fill(null));
 
   const [hovered, setHovered] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -24,34 +49,37 @@ function Cube() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioReady = useRef(false);
   const audioPlayed = useRef(false);
-  const textAnimationRef = useRef(0);
-  const redSweepRef = useRef(0);
+  
+  // 🎯 TIMELINE MASTER - Controla TODO
+  const timelineRef = useRef({
+    explosionStartTime: 0,
+    elapsedTime: 0, // Tiempo transcurrido desde que empezó la explosión
+    progress: 0,    // 0 a 1, progreso normalizado
+  });
 
-  // Store explosion data for each face
+  // Almacenar datos de explosión para cada cara
   const faceDataRef = useRef<any[]>([
-    { velocity: [0, 0, 1], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
-    { velocity: [0, 0, -1], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
-    { velocity: [1, 0, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
-    { velocity: [-1, 0, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
-    { velocity: [0, 1, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
-    { velocity: [0, -1, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [0, 0, 1], spinX: 0, spinY: 0, spinZ: 0 },
+    { velocity: [0, 0, -1], spinX: 0, spinY: 0, spinZ: 0 },
+    { velocity: [1, 0, 0], spinX: 0, spinY: 0, spinZ: 0 },
+    { velocity: [-1, 0, 0], spinX: 0, spinY: 0, spinZ: 0 },
+    { velocity: [0, 1, 0], spinX: 0, spinY: 0, spinZ: 0 },
+    { velocity: [0, -1, 0], spinX: 0, spinY: 0, spinZ: 0 },
   ]);
 
-  // 🎵 IMPROVED AUDIO PRELOADING - Fixes first-load sync issues
+  // 🎵 IMPROVED AUDIO PRELOADING
   useEffect(() => {
     if (typeof window !== "undefined") {
       const audio = new Audio("/sounds/reveal.mp3");
       audio.preload = "auto";
       audio.volume = 0.8;
-      audio.load(); // Force immediate loading
+      audio.load();
 
-      // Wait for audio to be FULLY buffered
       audio.oncanplaythrough = () => {
         audioReady.current = true;
         console.log("✅ Audio fully buffered and ready");
       };
 
-      // Fallback for slower connections
       audio.onloadeddata = () => {
         if (!audioReady.current) {
           audioReady.current = true;
@@ -68,7 +96,6 @@ function Cube() {
     }
   }, []);
 
-  // Prime audio context on first user interaction (fixes autoplay policy)
   const ensureAudioContext = useCallback(() => {
     if (typeof window !== "undefined" && audioRef.current && !audioReady.current) {
       audioRef.current.play().then(() => {
@@ -76,15 +103,13 @@ function Cube() {
         audioRef.current!.currentTime = 0;
         audioReady.current = true;
         console.log("✅ Audio context unlocked");
-      }).catch(() => {
-        // Silent fail - context will unlock on text reveal anyway
-      });
+      }).catch(() => {});
     }
   }, []);
 
   const handleClick = useCallback(() => {
     if (!clicked) {
-      ensureAudioContext(); // Unlock audio context first
+      ensureAudioContext();
       setClicked(true);
     }
   }, [clicked, ensureAudioContext]);
@@ -92,7 +117,7 @@ function Cube() {
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Normal rotation when not clicked
+    // Fase 1: Rotación normal o desaceleración
     if (!clicked) {
       if (hovered) {
         speed.current.x += (0 - speed.current.x) * 0.08;
@@ -105,10 +130,10 @@ function Cube() {
       groupRef.current.rotation.y += speed.current.y;
     }
 
-    // Slow down after click
+    // Fase 2: Desaceleración después del click (antes de la explosión)
     if (clicked && !exploding) {
-      speed.current.x *= 0.65;
-      speed.current.y *= 0.65;
+      speed.current.x *= ANIMATION_CONFIG.slowdownFactor;
+      speed.current.y *= ANIMATION_CONFIG.slowdownFactor;
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;
 
@@ -116,10 +141,13 @@ function Cube() {
         groupRef.current.rotation.x = 0;
         groupRef.current.rotation.y = 0;
         setExploding(true);
-        textAnimationRef.current = 0;
-        redSweepRef.current = 0;
+        
+        // Inicializar timeline de explosión
+        timelineRef.current.explosionStartTime = 0;
+        timelineRef.current.elapsedTime = 0;
+        timelineRef.current.progress = 0;
 
-        // Initialize random spins for each face
+        // Inicializar velocidades aleatorias de caras
         faceDataRef.current.forEach((face) => {
           face.spinX = (Math.random() - 0.5) * 20;
           face.spinY = (Math.random() - 0.5) * 20;
@@ -133,107 +161,147 @@ function Cube() {
       }
     }
 
-    // EXPLOSION ANIMATION
+    // 🎯 FASE 3: EXPLOSIÓN - TODO SINCRONIZADO POR TIMELINE
     if (exploding) {
-      // Animate faces
+      // Actualizar timeline general
+      timelineRef.current.elapsedTime += delta;
+      timelineRef.current.progress = Math.min(
+        timelineRef.current.elapsedTime / ANIMATION_CONFIG.explosionDuration,
+        1.0
+      );
+
+      // Mover y animar caras basado en TIMELINE
       groupRef.current.children.forEach((child: any, index) => {
         if (!child || index >= 6) return;
         
         const faceData = faceDataRef.current[index];
-        faceData.time += delta;
 
-        // Move outward with velocity
-        const speed = 4 + index * 0.5;
+        // Movimiento: usa elapsedTime en vez de face.time
+        const speed = ANIMATION_CONFIG.facesExplosionSpeed(index);
         child.position.x += faceData.velocity[0] * speed * delta;
         child.position.y += faceData.velocity[1] * speed * delta;
         child.position.z += faceData.velocity[2] * speed * delta;
 
-        // Chaotic rotation
+        // Rotación caótica
         child.rotation.x += faceData.spinX * delta;
         child.rotation.y += faceData.spinY * delta;
         child.rotation.z += faceData.spinZ * delta;
 
-        // Scale down
-        const scale = Math.max(0.05, 1 - faceData.time * 2);
+        // Escala: depende del TIMELINE
+        const faceFadeProgress = Math.min(
+          timelineRef.current.elapsedTime / ANIMATION_CONFIG.facesFadeDuration,
+          1.0
+        );
+        const scale = Math.max(0.05, 1 - faceFadeProgress * 2);
         child.scale.setScalar(scale);
 
-        // Fade out materials
+        // Opacidad de CARAS: sincronizada con timeline
         child.children.forEach((mesh: any) => {
           if (mesh.material) {
             mesh.material.transparent = true;
-            mesh.material.opacity = Math.max(0, 1 - faceData.time * 1.5);
+            mesh.material.opacity = Math.max(0, 1 - faceFadeProgress * 1.5);
           }
         });
-      });
 
-      // 🎵 PERFECTLY SYNCED TEXT + AUDIO (0.8s after explosion)
-      if (faceDataRef.current[0].time > 0.8 && !showText) {
-        setShowText(true);
-
-        // BULLETPROOF AUDIO SYNC - Only plays when fully ready
-        if (audioRef.current && !audioPlayed.current) {
-          if (audioReady.current) {
-            // Audio is fully buffered - play immediately
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch((e) => {
-              console.warn("Audio play failed:", e);
-            });
-            audioPlayed.current = true;
-          } else {
-            // Audio still loading - wait one more frame
-            const checkAudio = () => {
-              if (audioRef.current && audioReady.current && !audioPlayed.current) {
-                audioRef.current.currentTime = 0;
-                audioRef.current.play().catch(console.error);
-                audioPlayed.current = true;
-              }
-            };
-            requestAnimationFrame(checkAudio);
+        // Opacidad de BORDES: sincronizada exactamente igual
+        if (edgeRefs.current[index]) {
+          const edgeLines = edgeRefs.current[index];
+          if (edgeLines.material) {
+            edgeLines.material.transparent = true;
+            edgeLines.material.opacity = Math.max(0, 1 - faceFadeProgress * 1.5);
           }
         }
-      }
-    }
+      });
 
-    // TEXT ANIMATION - Normal fade/scale first, THEN red sweep
-    if (exploding && textRef.current) {
-      textAnimationRef.current += delta;
-      const textProgress = Math.min(textAnimationRef.current * 4, 1);
-      const eased = 1 - Math.pow(1 - textProgress, 3);
+      // 🎵 AUDIO: Sincronizado con timeline
+      const audioTriggerProgress = Math.min(
+        timelineRef.current.elapsedTime / ANIMATION_CONFIG.audioPlayDelay,
+        1.0
+      );
       
-      // 🔥 RED SWEEP starts AFTER text is fully sized (textProgress > 0.95)
-      let color = "white";
-      let extraScale = 1;
-      
-      if (textProgress > 0.95) {
-        redSweepRef.current += delta * 3;
-        const sweepProgress = Math.min(redSweepRef.current, 1);
-        
-        if (sweepProgress < 1) {
-          const sweepPeak = Math.sin(sweepProgress * Math.PI);
-          color = `hsl(0, ${100 * sweepPeak}%, 50%)`;
-          extraScale = 1 + sweepPeak * 0.3;
+      if (audioTriggerProgress >= 1.0 && !audioPlayed.current) {
+        if (audioRef.current && audioReady.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch((e) => {
+            console.warn("Audio play falló:", e);
+          });
+          audioPlayed.current = true;
         }
       }
+
+      // 📝 TEXTO: Sincronizado con timeline
+      const textTriggerProgress = Math.min(
+        timelineRef.current.elapsedTime / ANIMATION_CONFIG.textAppearanceDelay,
+        1.0
+      );
       
-      const mat = textRef.current.material as any;
-      mat.opacity = eased;
-      mat.color.set(color);
-      
-      const scale = (0.2 + 0.8 * eased) * extraScale;
-      textRef.current.scale.set(scale, scale, scale);
-      textRef.current.position.z = -4 + 2 * eased;
+      if (textTriggerProgress >= 1.0 && !showText) {
+        setShowText(true);
+      }
+
+      // 📝 ANIMACIÓN DE TEXTO: Depende del timeline
+      if (showText && textRef.current) {
+        const textElapsedTime = Math.max(
+          0,
+          timelineRef.current.elapsedTime - ANIMATION_CONFIG.textAppearanceDelay
+        );
+        const textProgress = Math.min(
+          textElapsedTime / ANIMATION_CONFIG.textAnimationDuration,
+          1.0
+        );
+        const eased = 1 - Math.pow(1 - textProgress, 3);
+        
+        let color = "white";
+        let extraScale = 1;
+        
+        // 🔴 BARRIDO ROJO: También sincronizado
+        const redSweepElapsedTime = Math.max(
+          0,
+          timelineRef.current.elapsedTime - (ANIMATION_CONFIG.textAppearanceDelay + ANIMATION_CONFIG.textRedSweepDelay)
+        );
+        const redSweepProgress = Math.min(
+          redSweepElapsedTime / ANIMATION_CONFIG.textRedSweepDuration,
+          1.0
+        );
+        
+        if (redSweepProgress > 0) {
+          const sweepPeak = Math.sin(redSweepProgress * Math.PI);
+          color = `hsl(0, ${100 * sweepPeak}%, ${100 - 50 * sweepPeak}%)`;
+          extraScale = 1 + sweepPeak * 0.3;
+        }
+        
+        const mat = textRef.current.material as any;
+        mat.opacity = 1;
+        mat.color.set(color);
+        
+        const scale = (0.2 + 0.8 * eased) * extraScale;
+        textRef.current.scale.set(scale, scale, scale);
+        textRef.current.position.z = -4 + 2 * eased;
+      }
     }
   });
 
-  const Face = ({ position, rotation, index }: any) => (
-    <group position={position}>
-      <mesh rotation={rotation}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color="#ffffff" side={DoubleSide} />
-        <Edges scale={1.01} threshold={15} color="black" />
-      </mesh>
-    </group>
-  );
+  // 🔥 UPDATED Face component with edge ref forwarding
+  const Face = ({ position, rotation, index }: any) => {
+    const edgeRef = (el: any) => {
+      if (el) edgeRefs.current[index] = el;
+    };
+
+    return (
+      <group position={position}>
+        <mesh rotation={rotation}>
+          <planeGeometry args={[1, 1]} />
+          <meshBasicMaterial color="#ffffff" side={DoubleSide} />
+          <Edges 
+            ref={edgeRef}
+            scale={1.01} 
+            threshold={15} 
+            color="black" 
+          />
+        </mesh>
+      </group>
+    );
+  };
 
   return (
     <>
@@ -256,7 +324,7 @@ function Cube() {
         <Text
           ref={textRef}
           position={[0, 0, -4]}
-          fontSize={0.7}
+          fontSize={0.55}
           color="white"
           anchorX="center"
           anchorY="middle"

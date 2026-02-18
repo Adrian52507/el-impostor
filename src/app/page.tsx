@@ -8,6 +8,7 @@ import { DoubleSide } from "three";
 
 function Cube() {
   const groupRef = useRef<Group>(null!);
+  const textRef = useRef<any>(null);
 
   const [hovered, setHovered] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -19,19 +20,23 @@ function Cube() {
     y: 0.02 + Math.random() * 0.04,
   });
 
-  const textRef = useRef<any>(null);
-  const textOpacity = useRef(0);
-  const textReady = useRef(false);
-
-  const baseSpeed = useRef({
-    x: 0.03,
-    y: 0.035,
-  });
-
+  const baseSpeed = useRef({ x: 0.03, y: 0.035 });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioPlayed = useRef(false);
+  const textAnimationRef = useRef(0);
+  const redSweepRef = useRef(0); // NEW: Left-to-right red sweep
 
-  // Preload audio safely with useEffect
+  // Store explosion data for each face
+  const faceDataRef = useRef<any[]>([
+    { velocity: [0, 0, 1], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [0, 0, -1], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [1, 0, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [-1, 0, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [0, 1, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+    { velocity: [0, -1, 0], spinX: 0, spinY: 0, spinZ: 0, time: 0 },
+  ]);
+
+  // Preload audio
   useEffect(() => {
     if (typeof window !== "undefined") {
       audioRef.current = new Audio("/sounds/reveal.mp3");
@@ -43,24 +48,19 @@ function Cube() {
   const handleClick = useCallback(() => {
     if (!clicked) {
       setClicked(true);
-
-      // ⏳ Reproducir audio después de 3 segundos
       setTimeout(() => {
         if (audioRef.current && !audioPlayed.current) {
-          audioRef.current.play().catch((e) =>
-            console.error("Audio play failed:", e)
-          );
+          audioRef.current.play().catch(console.error);
           audioPlayed.current = true;
         }
-      }, 1400); // 👈 1400ms = 1.4 segundos
+      }, 1400);
     }
   }, [clicked]);
 
-
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Hover detiene temporalmente
+    // Normal rotation when not clicked
     if (!clicked) {
       if (hovered) {
         speed.current.x += (0 - speed.current.x) * 0.08;
@@ -69,113 +69,141 @@ function Cube() {
         speed.current.x += (baseSpeed.current.x - speed.current.x) * 0.05;
         speed.current.y += (baseSpeed.current.y - speed.current.y) * 0.05;
       }
-
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;
     }
 
-    // CLICK → detener definitivo
+    // Slow down after click
     if (clicked && !exploding) {
-      speed.current.x *= 1;
-      speed.current.y *= 1;
-
+      speed.current.x *= 0.95;
+      speed.current.y *= 0.95;
       groupRef.current.rotation.x += speed.current.x;
       groupRef.current.rotation.y += speed.current.y;
 
-      if (
-        Math.abs(speed.current.x) < 0.001 &&
-        Math.abs(speed.current.y) < 0.001
-      ) {
+      if (Math.abs(speed.current.x) < 0.001 && Math.abs(speed.current.y) < 0.001) {
         groupRef.current.rotation.x = 0;
         groupRef.current.rotation.y = 0;
         setExploding(true);
+        textAnimationRef.current = 0;
+        redSweepRef.current = 0; // Reset sweep
 
-        setTimeout(() => {
-          textOpacity.current = 0;
-          textReady.current = false;
-          setShowText(true);
-        }, 800);
+        // Initialize random spins for each face
+        faceDataRef.current.forEach((face) => {
+          face.spinX = (Math.random() - 0.5) * 20;
+          face.spinY = (Math.random() - 0.5) * 20;
+          face.spinZ = (Math.random() - 0.5) * 15;
+          face.velocity = [
+            face.velocity[0] + (Math.random() - 0.5) * 0.3,
+            face.velocity[1] + (Math.random() - 0.5) * 0.3,
+            face.velocity[2] + (Math.random() - 0.5) * 0.3
+          ];
+        });
       }
     }
 
-    // EXPLOSIÓN REAL
+    // EXPLOSION ANIMATION
     if (exploding) {
-      groupRef.current.children.forEach((face, i) => {
-        const direction = [
-          [0, 0, 1],
-          [0, 0, -1],
-          [1, 0, 0],
-          [-1, 0, 0],
-          [0, 1, 0],
-          [0, -1, 0],
-        ][i];
+      // Animate faces
+      groupRef.current.children.forEach((child: any, index) => {
+        if (!child || index >= 6) return;
+        
+        const faceData = faceDataRef.current[index];
+        faceData.time += delta;
 
-        if (!direction) return;
+        // Move outward with velocity
+        const speed = 4 + index * 0.5;
+        child.position.x += faceData.velocity[0] * speed * delta;
+        child.position.y += faceData.velocity[1] * speed * delta;
+        child.position.z += faceData.velocity[2] * speed * delta;
 
-        face.position.x += direction[0] * 0.2;
-        face.position.y += direction[1] * 0.2;
-        face.position.z += direction[2] * 0.2;
+        // Chaotic rotation
+        child.rotation.x += faceData.spinX * delta;
+        child.rotation.y += faceData.spinY * delta;
+        child.rotation.z += faceData.spinZ * delta;
 
-        face.rotation.x += 0.1;
-        face.rotation.y += 0.1;
+        // Scale down
+        const scale = Math.max(0.05, 1 - faceData.time * 2);
+        child.scale.setScalar(scale);
+
+        // Fade out materials
+        child.children.forEach((mesh: any) => {
+          if (mesh.material) {
+            mesh.material.transparent = true;
+            mesh.material.opacity = Math.max(0, 1 - faceData.time * 1.5);
+          }
+        });
       });
 
-      // Fade-in + animación suave del texto
-      if (showText && textRef.current) {
-        const mat: any = textRef.current.material;
-
-        if (!textReady.current) {
-          mat.transparent = true;
-          mat.opacity = 0;
-          textRef.current.scale.set(0.2, 0.2, 0.2);
-          textRef.current.position.z = -2;
-          textReady.current = true;
-        }
-
-        textOpacity.current = Math.min(textOpacity.current + 0.03, 1);
-        mat.opacity = textOpacity.current;
-
-        textRef.current.scale.x += (1 - textRef.current.scale.x) * 0.08;
-        textRef.current.scale.y += (1 - textRef.current.scale.y) * 0.08;
-        textRef.current.scale.z += (1 - textRef.current.scale.z) * 0.08;
-
-        textRef.current.position.z += (0 - textRef.current.position.z) * 0.08;
+      // SHOW TEXT 0.8s AFTER EXPLOSION STARTS
+      if (faceDataRef.current[0].time > 0.8 && !showText) {
+        setShowText(true);
       }
+    }
+
+    // TEXT ANIMATION - Normal fade/scale first, THEN red sweep
+    if (exploding && textRef.current) {
+      textAnimationRef.current += delta;
+      const textProgress = Math.min(textAnimationRef.current * 4, 1);
+      const eased = 1 - Math.pow(1 - textProgress, 3);
+      
+      // 🔥 RED SWEEP starts AFTER text is fully sized (textProgress > 0.95)
+      let color = "white";
+      let extraScale = 1;
+      
+      if (textProgress > 0.95) { // Wait for normal animation to complete
+        redSweepRef.current += delta * 3; // Fast sweep speed
+        const sweepProgress = Math.min(redSweepRef.current, 1); // 0 to 1
+        
+        if (sweepProgress < 1) {
+          // LEFT-TO-RIGHT RED SWEEP effect
+          const sweepPeak = Math.sin(sweepProgress * Math.PI);
+          color = `hsl(0, ${100 * sweepPeak}%, 50%)`; // Pure RED sweep
+          extraScale = 1 + sweepPeak * 0.3; // Pulse growth
+        }
+      }
+      
+      const mat = textRef.current.material as any;
+      mat.opacity = eased;
+      mat.color.set(color);
+      
+      const scale = (0.2 + 0.8 * eased) * extraScale;
+      textRef.current.scale.set(scale, scale, scale);
+      textRef.current.position.z = -4 + 2 * eased;
     }
   });
 
-  const Face = ({ position, rotation }: any) => (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial color="#ffffff" side={DoubleSide} />
-      <Edges scale={1.01} threshold={15} color="black" />
-    </mesh>
+  const Face = ({ position, rotation, index }: any) => (
+    <group position={position}>
+      <mesh rotation={rotation}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial color="#ffffff" side={DoubleSide} />
+        <Edges scale={1.01} threshold={15} color="black" />
+      </mesh>
+    </group>
   );
 
   return (
     <>
-      {!showText && (
-        <group
-          ref={groupRef}
-          scale={0.5}
-          onPointerOver={() => !clicked && setHovered(true)}
-          onPointerOut={() => !clicked && setHovered(false)}
-          onClick={handleClick}
-        >
-          <Face position={[0, 0, 0.5]} rotation={[0, 0, 0]} />
-          <Face position={[0, 0, -0.5]} rotation={[0, Math.PI, 0]} />
-          <Face position={[0.5, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
-          <Face position={[-0.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
-          <Face position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} />
-          <Face position={[0, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]} />
-        </group>
-      )}
+      <group
+        ref={groupRef}
+        scale={0.5}
+        onPointerOver={() => !clicked && setHovered(true)}
+        onPointerOut={() => !clicked && setHovered(false)}
+        onClick={handleClick}
+      >
+        <Face index={0} position={[0, 0, 0.5]} rotation={[0, 0, 0]} />
+        <Face index={1} position={[0, 0, -0.5]} rotation={[0, Math.PI, 0]} />
+        <Face index={2} position={[0.5, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
+        <Face index={3} position={[-0.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+        <Face index={4} position={[0, 0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+        <Face index={5} position={[0, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]} />
+      </group>
 
       {showText && (
         <Text
           ref={textRef}
-          position={[0, 0, -2]}
-          fontSize={2.5}
+          position={[0, 0, -4]}
+          fontSize={0.7}
           color="white"
           anchorX="center"
           anchorY="middle"

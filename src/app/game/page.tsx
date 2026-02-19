@@ -34,7 +34,7 @@ export default function Game() {
           isVisible ? "materialize" : "opacity-0"
         }`}
       >
-        <h1 className="text-6xl font-bold text-white mb-8">EL IMPOSTOR</h1>
+        <h1 className="text-6xl font-bold text-white mb-8">EL FINGIDAZO</h1>
         <p className="text-2xl text-gray-400">🎮 El juego viene pronto... 🎮</p>
       </div>
     </main>

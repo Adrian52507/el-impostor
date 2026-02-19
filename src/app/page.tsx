@@ -3,6 +3,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges, Text } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Group } from "three";
 import { DoubleSide } from "three";
 
@@ -22,6 +23,7 @@ const ANIMATION_CONFIG = {
   textAnimationDuration: 0.25,
   textRedSweepDelay: 0.95,
   textRedSweepDuration: 0.5,
+  textFadeOutDuration: 0.6,
   
   // Audio
   audioPlayDelay: 0.8,
@@ -31,6 +33,7 @@ const ANIMATION_CONFIG = {
 };
 
 function Cube() {
+  const router = useRouter();
   const groupRef = useRef<Group>(null!);
   const textRef = useRef<any>(null);
   const edgeRefs = useRef<any[]>(Array(6).fill(null));
@@ -39,6 +42,8 @@ function Cube() {
   const [clicked, setClicked] = useState(false);
   const [exploding, setExploding] = useState(false);
   const [showText, setShowText] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
+  const [textFadingOut, setTextFadingOut] = useState(false);
 
   const speed = useRef({
     x: 0.02 + Math.random() * 0.04,
@@ -55,6 +60,7 @@ function Cube() {
     explosionStartTime: 0,
     elapsedTime: 0, // Tiempo transcurrido desde que empezó la explosión
     progress: 0,    // 0 a 1, progreso normalizado
+    textFadeOutStartTime: undefined as number | undefined,
   });
 
   // Almacenar datos de explosión para cada cara
@@ -106,6 +112,22 @@ function Cube() {
       }).catch(() => {});
     }
   }, []);
+
+  // Fade out del texto y navegación al juego
+  useEffect(() => {
+    if (animationComplete && !textFadingOut) {
+      setTextFadingOut(true);
+    }
+  }, [animationComplete, textFadingOut]);
+
+  useEffect(() => {
+    if (textFadingOut) {
+      const timer = setTimeout(() => {
+        router.push('/game');
+      }, ANIMATION_CONFIG.textFadeOutDuration * 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [textFadingOut, router]);
 
   const handleClick = useCallback(() => {
     if (!clicked) {
@@ -270,8 +292,24 @@ function Cube() {
           extraScale = 1 + sweepPeak * 0.3;
         }
         
+        // Detectar cuando la animación completa
+        if (redSweepProgress === 1.0 && !animationComplete) {
+          setAnimationComplete(true);
+        }
+        
+        // Fade out del texto cuando se está desvaneciendo
+        let textOpacity = 1;
+        if (textFadingOut && timelineRef.current.textFadeOutStartTime === undefined) {
+          timelineRef.current.textFadeOutStartTime = timelineRef.current.elapsedTime;
+        }
+        if (textFadingOut && timelineRef.current.textFadeOutStartTime !== undefined) {
+          const fadeOutElapsed = timelineRef.current.elapsedTime - timelineRef.current.textFadeOutStartTime;
+          const fadeOutProgress = Math.min(fadeOutElapsed / ANIMATION_CONFIG.textFadeOutDuration, 1.0);
+          textOpacity = 1 - fadeOutProgress;
+        }
+        
         const mat = textRef.current.material as any;
-        mat.opacity = 1;
+        mat.opacity = textOpacity;
         mat.color.set(color);
         
         const scale = (0.2 + 0.8 * eased) * extraScale;

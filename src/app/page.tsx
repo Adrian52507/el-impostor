@@ -308,8 +308,18 @@ function Cube() {
       <group
         ref={groupRef}
         scale={0.5}
-        onPointerOver={() => !clicked && setHovered(true)}
-        onPointerOut={() => !clicked && setHovered(false)}
+        onPointerOver={() => {
+          if (!clicked) {
+            setHovered(true);
+            document.body.style.cursor = 'pointer';
+          }
+        }}
+        onPointerOut={() => {
+          if (!clicked) {
+            setHovered(false);
+            document.body.style.cursor = 'auto';
+          }
+        }}
         onClick={handleClick}
       >
         <Face index={0} position={[0, 0, 0.5]} rotation={[0, 0, 0]} />

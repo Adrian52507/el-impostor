@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "🐒 El Impostor",
-  description: "El Impostor - Un juego intrigante",
+  title: "👁️ El Fingidazo",
+  description: "El Fingidazo - Un juego intrigante",
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>😈</text></svg>",
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>👁️</text></svg>",
   },
 };
 

@@ -1,12 +1,8 @@
-"use client";
+import React from "react";
 
-import { useRouter, useSearchParams } from "next/navigation";
-
-export default function Categories() {
-  const router = useRouter();
-  const sp = useSearchParams();
-  const players = sp?.get("players") ?? "?";
-  const impostors = sp?.get("impostors") ?? "?";
+export default function Categories({ searchParams }: { searchParams?: { players?: string; impostors?: string } }) {
+  const players = searchParams?.players ?? "?";
+  const impostors = searchParams?.impostors ?? "?";
   const ICONS: Record<string, string> = {
     Películas: '🎬',
     Series: '📺',
@@ -52,7 +48,7 @@ export default function Categories() {
 
       <div className="cat-wrap">
         <div className="cat-header">
-          <button className="back-btn" onClick={() => router.back()} aria-label="Volver">← Volver</button>
+          <a className="back-btn" href="/game" aria-label="Volver">← Volver</a>
           <div className="cat-title">CATEGORÍAS</div>
           <div className="cat-meta">
             <div>Jugadores: <strong>{players}</strong></div>
@@ -71,12 +67,10 @@ export default function Categories() {
             'Animales',
             'Comida',
           ].map((cat) => (
-            <button
+            <a
               key={cat}
               className="cat-btn"
-              onClick={() => {
-                router.push(`/game/play?cat=${encodeURIComponent(cat)}&players=${players}&impostors=${impostors}`);
-              }}
+              href={`/game/play?cat=${encodeURIComponent(cat)}&players=${players}&impostors=${impostors}`}
             >
               <div className="cat-icon">{ICONS[cat] ?? cat.charAt(0)}</div>
               <div style={{ flex: 1 }}>
@@ -84,7 +78,7 @@ export default function Categories() {
                 <div className="cat-sub">Haz clic para empezar con la categoría de {cat.toLowerCase()}.</div>
               </div>
               <div className="cat-arrow">→</div>
-            </button>
+            </a>
           ))}
         </div>
       </div>

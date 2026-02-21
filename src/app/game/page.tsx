@@ -15,7 +15,7 @@ export default function Game() {
     "EL FINGIDAZO",
     "ACCESO: RESTRINGIDO",
     "INICIALIZANDO...",
-    "SISTEMA: SECURE_TERMINAL",
+    "ES TIEMPO DE ESCOGER EL NÚMERO DE JUGADORES E IMPOSTORES PARA INICIAR",
   ]);
 
   // Game settings
@@ -110,7 +110,7 @@ export default function Game() {
         .cmd:disabled{opacity:0.35;cursor:not-allowed}
         .cmd:active{animation:glitchFrame 160ms steps(2,end)}
         .screen{flex:1;padding-top:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center}
-        .row{white-space:pre;color:var(--g);text-transform:uppercase;font-size:16px;line-height:1.1;text-shadow:0 0 6px var(--g),0 0 12px var(--gd);text-align:center}
+        .row{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--g);text-transform:uppercase;font-size:16px;line-height:1.1;text-shadow:0 0 6px var(--g),0 0 12px var(--gd);text-align:center}
         .row.title{font-size:26px;font-weight:700}
         .cursor{display:inline-block;width:10px;height:18px;background:var(--g);margin-left:6px;vertical-align:middle;animation:blink 1s steps(2,start) infinite}
         @keyframes blink{50%{opacity:0}} 
@@ -136,6 +136,13 @@ export default function Game() {
           .row{font-size:15px}
           .row.title{font-size:20px}
           .cursor{width:8px;height:16px}
+        }
+        @media (min-width:421px) and (max-width:950px){
+          .console{margin-right:20px;margin-left:20px;} .top{flex-wrap:wrap;align-items:center;gap:12px}
+          .controls{width:100%;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+          .setting{flex:0 1 auto;min-width:120px}
+          .cmds{display:flex;flex-wrap:wrap;gap:8px}
+          .cmd{flex:0 0 auto}
         }
       `}</style>
 

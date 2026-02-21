@@ -1,19 +1,92 @@
-export default function Categories({ searchParams }: { searchParams?: { players?: string; impostors?: string } }) {
-  const players = searchParams?.players ?? "?";
-  const impostors = searchParams?.impostors ?? "?";
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+
+export default function Categories() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const players = sp?.get("players") ?? "?";
+  const impostors = sp?.get("impostors") ?? "?";
+  const ICONS: Record<string, string> = {
+    Películas: '🎬',
+    Series: '📺',
+    Personajes: '🧑',
+    Celebridades: '🌟',
+    Animales: '🐾',
+    Comida: '🍔',
+  };
 
   return (
     <main className="w-full h-screen flex items-center justify-center" style={{ background: '#000' }}>
-      <div style={{ color: '#00FF41', fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace", padding: 20, border: '1px solid #00FF41', maxWidth: 640, width: '92%' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>CATEGORÍAS</div>
-        <div style={{ marginBottom: 8 }}>Jugadores: <strong>{players}</strong></div>
-        <div style={{ marginBottom: 16 }}>Impostores: <strong>{impostors}</strong></div>
-        <div style={{ opacity: 0.9 }}>Selecciona una categoría para la partida (ejemplo):</div>
-        <ul style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <li><button style={{ background: 'transparent', color: '#00FF41', border: '1px solid #00FF41', padding: '8px 10px', borderRadius: 6 }}>Clásico</button></li>
-          <li><button style={{ background: 'transparent', color: '#00FF41', border: '1px solid #00FF41', padding: '8px 10px', borderRadius: 6 }}>Personalizado</button></li>
-          <li><button style={{ background: 'transparent', color: '#00FF41', border: '1px solid #00FF41', padding: '8px 10px', borderRadius: 6 }}>Aleatorio</button></li>
-        </ul>
+      <style>{`
+        .cat-wrap{color:#00FF41;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;padding:14px 20px;border:1px solid #00FF41;max-width:760px;width:94%;margin-block:8px}
+        .cat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+        .cat-title{font-size:20px;font-weight:700}
+        .cat-meta{font-size:13px;text-align:right}
+        .back-btn{background:transparent;border:1px solid transparent;color:var(--g,#00FF41);padding:6px 8px;border-radius:6px;cursor:pointer;font-size:16px}
+        .back-btn:active{transform:translateY(1px)}
+        .cat-list{display:flex;flex-direction:column;gap:12px}
+        .cat-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid #00FF41;background:transparent;color:#00FF41;text-align:left;width:100%;cursor:pointer;transition:transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease}
+        .cat-btn:hover{background:rgba(0,255,65,0.03);transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,255,65,0.04)}
+        .cat-btn:active{transform:translateY(0);box-shadow:none;background:rgba(0,255,65,0.06)}
+        .cat-icon{width:56px;height:40px;border-radius:6px;background:rgba(0,255,65,0.06);display:flex;align-items:center;justify-content:center;font-size:18px}
+        .cat-name{font-size:16px;font-weight:700;text-transform:uppercase}
+        .cat-sub{font-size:12px;opacity:0.8}
+        .cat-arrow{font-size:12px;opacity:0.9}
+
+        /* Mobile adjustments */
+        @media (max-width:420px){
+          .cat-wrap{padding:12px;width:94%;max-width:100%}
+          .cat-title{font-size:18px}
+          .cat-icon{width:48px;height:36px;font-size:16px}
+          .cat-name{font-size:14px}
+          .back-btn{padding:8px 10px}
+        }
+
+        /* Small-to-medium widths: ensure header wraps and controls don't overflow */
+        @media (max-width:950px){
+          .cat-header{flex-wrap:wrap;align-items:center}
+          .cat-meta{width:100%;text-align:left;font-size:13px}
+        }
+      `}</style>
+
+      <div className="cat-wrap">
+        <div className="cat-header">
+          <button className="back-btn" onClick={() => router.back()} aria-label="Volver">← Volver</button>
+          <div className="cat-title">CATEGORÍAS</div>
+          <div className="cat-meta">
+            <div>Jugadores: <strong>{players}</strong></div>
+            <div>Impostores: <strong>{impostors}</strong></div>
+          </div>
+        </div>
+
+        <div style={{ opacity: 0.9, marginBottom: 12 }}>Selecciona una categoría para la partida:</div>
+
+        <div className="cat-list">
+          {[
+            'Películas',
+            'Series',
+            'Personajes',
+            'Celebridades',
+            'Animales',
+            'Comida',
+          ].map((cat) => (
+            <button
+              key={cat}
+              className="cat-btn"
+              onClick={() => {
+                router.push(`/game/play?cat=${encodeURIComponent(cat)}&players=${players}&impostors=${impostors}`);
+              }}
+            >
+              <div className="cat-icon">{ICONS[cat] ?? cat.charAt(0)}</div>
+              <div style={{ flex: 1 }}>
+                <div className="cat-name">{cat}</div>
+                <div className="cat-sub">Haz clic para empezar con la categoría de {cat.toLowerCase()}.</div>
+              </div>
+              <div className="cat-arrow">→</div>
+            </button>
+          ))}
+        </div>
       </div>
     </main>
   );

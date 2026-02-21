@@ -51,7 +51,7 @@ export default function Categories() {
         .back-btn:active{transform:translateY(1px)}
         .cat-list{display:flex;flex-direction:column;gap:12px;max-height:288px;overflow-y:auto;padding-top:8px;padding-right:6px;-webkit-overflow-scrolling:touch;-ms-overflow-style:none;scrollbar-width:none}
         .cat-list::-webkit-scrollbar{display:none;width:0;height:0}
-        .cat-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid #00FF41;background:transparent;color:#00FF41;text-align:left;width:100%;cursor:pointer;transition:transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease}
+        .cat-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid #00FF41;background:transparent;color:#00FF41;text-align:left;width:100%;cursor:pointer;transition:transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;font:inherit;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace}
         .cat-btn:hover{background:rgba(0,255,65,0.03);transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,255,65,0.04)}
         .cat-btn:active{transform:translateY(0);box-shadow:none;background:rgba(0,255,65,0.06)}
         .cat-icon{width:56px;height:40px;border-radius:6px;background:rgba(0,255,65,0.06);display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -104,15 +104,13 @@ export default function Categories() {
             'Animales',
             'Comida',
           ].map((cat) => (
-            <a
+            <button
               key={cat}
               className={`cat-btn ${selectedCat === cat ? 'selected' : ''}`}
-              href={`/game/play?cat=${encodeURIComponent(cat)}&players=${players}&impostors=${impostors}`}
               onMouseEnter={playHoverSound}
               onFocus={playHoverSound}
               onTouchStart={playHoverSound}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 setSelectedCat((cur) => (cur === cat ? null : cat));
               }}
             >
@@ -122,7 +120,7 @@ export default function Categories() {
                 <div className="cat-sub">{DESCRIPTIONS[cat] ?? 'Descripción breve'}</div>
               </div>
               <div className="cat-arrow">→</div>
-            </a>
+            </button>
           ))}
         </div>
         <audio ref={hoverAudioRef} src="/sounds/mouse_up.mp3" preload="auto" aria-hidden />

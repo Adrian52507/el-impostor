@@ -13,7 +13,7 @@ const COLORS = {
 export default function Game() {
   const [lines, setLines] = useState<string[]>([
     "EL FINGIDAZO",
-    "ACCESO: RESTRINGIDO",
+    "ACCESO: AUTORIZADO",
     "INICIALIZANDO...",
     "ES TIEMPO DE ESCOGER EL NÚMERO DE JUGADORES E IMPOSTORES PARA INICIAR",
   ]);
@@ -59,28 +59,44 @@ export default function Game() {
   }, []);
 
   // Typewriter per line
+  // Typewriter per line (reliable, uses timeouts)
   useEffect(() => {
+    if (!mounted.current) return;
     if (lineIndex >= lines.length) return;
     const current = lines[lineIndex];
-    const t = setInterval(() => {
-      setCharIndex((c) => {
-        if (!mounted.current) return c;
-        if (c + 1 > current.length) {
-          clearInterval(t);
-          setTimeout(() => setLineIndex((i) => i + 1), 600);
-          return current.length;
-        }
-        return c + 1;
-      });
-    }, 36);
-    return () => clearInterval(t);
-  }, [lineIndex]);
+    if (charIndex < current.length) {
+      const t = setTimeout(() => setCharIndex((c) => c + 1), 36);
+      return () => clearTimeout(t);
+    } else {
+      const t = setTimeout(() => setLineIndex((i) => i + 1), 600);
+      return () => clearTimeout(t);
+    }
+  }, [charIndex, lineIndex, lines]);
 
   useEffect(() => setCharIndex(0), [lineIndex]);
 
   function doGlitch() {
     setGlitch(true);
     setTimeout(() => setGlitch(false), 260);
+  }
+
+  const clickAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  async function playClickSound() {
+    const a = clickAudioRef.current;
+    if (!a) return;
+    try {
+      a.currentTime = 0;
+      await a.play();
+    } catch (e) {
+      try {
+        a.src = '/sounds/reveal.mp3';
+        a.currentTime = 0;
+        void a.play();
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   function startGame() {
@@ -100,7 +116,7 @@ export default function Game() {
         *{box-sizing:border-box}
         .console{width:94%;max-width:980px;height:84vh;border:1px solid var(--g);padding:20px;display:flex;flex-direction:column;gap:14px;background:#000;font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;color:var(--g);} 
         .console .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--g);padding-bottom:8px}
-        .brand{text-transform:uppercase;letter-spacing:2px;font-size:18px;text-shadow:0 0 6px var(--g),0 0 16px var(--gd)}
+        .brand{text-transform:uppercase;letter-spacing:2px;font-size:18px;text-shadow:0 0 6px var(--g),0 0 16px var(--gd);padding:6px 0}
         .cmds{display:flex;gap:8px}
         .controls{display:flex;align-items:center;gap:12px}
         .setting{display:flex;align-items:center;gap:8px}
@@ -127,7 +143,7 @@ export default function Game() {
         @media (max-width:420px){
           .console{width:90%;padding:10px;height:95vh;gap:10px}
           .console .top{flex-direction:column;align-items:center;gap:10px}
-          .brand{font-size:16px}
+          .brand{font-size:16px;padding:6px 0}
           .controls{flex-direction:column;align-items:stretch;gap:10px;width:100%}
           .setting{justify-content:space-between;width:100%}
           .value{min-width:44px;font-size:16px}
@@ -148,7 +164,7 @@ export default function Game() {
 
           <div style={{position:'relative'}} className={`console ${glitch ? 'glitch' : ''}`}>
         <div className="top">
-          <div className="brand">SISTEMA: SECURE_TERMINAL</div>
+          <div className="brand">SYSTEM: SECURE_TERMINAL</div>
           <div className="controls">
             <div className="setting">
               <div style={{fontSize:12,color:COLORS.primary,textTransform:'uppercase'}}>Jugadores</div>
@@ -156,6 +172,7 @@ export default function Game() {
                 <button
                   className="cmd"
                   onClick={() => updatePlayers(players - 1)}
+                  onMouseDown={playClickSound}
                   disabled={players <= minPlayers}
                   aria-label="Disminuir jugadores"
                 >
@@ -165,6 +182,7 @@ export default function Game() {
                 <button
                   className="cmd"
                   onClick={() => updatePlayers(players + 1)}
+                  onMouseDown={playClickSound}
                   disabled={players >= maxPlayers}
                   aria-label="Aumentar jugadores"
                 >
@@ -179,6 +197,7 @@ export default function Game() {
                 <button
                   className="cmd"
                   onClick={() => updateImpostors(impostors - 1)}
+                  onMouseDown={playClickSound}
                   disabled={impostors <= 1}
                   aria-label="Disminuir impostores"
                 >
@@ -188,6 +207,7 @@ export default function Game() {
                 <button
                   className="cmd"
                   onClick={() => updateImpostors(impostors + 1)}
+                  onMouseDown={playClickSound}
                   disabled={impostors >= maxImpostorsFor(players)}
                   aria-label="Aumentar impostores"
                 >
@@ -197,16 +217,7 @@ export default function Game() {
             </div>
 
             <div className="cmds">
-              <button className="cmd" onClick={() => startGame()}>RUN</button>
-              <button
-                className="cmd"
-                onClick={() => {
-                  doGlitch();
-                  setTimeout(() => router.push('/'), 260);
-                }}
-              >
-                BACKDOOR
-              </button>
+              <button className="cmd" onClick={() => startGame()} onMouseDown={playClickSound}>RUN</button>
             </div>
           </div>
         </div>
@@ -214,7 +225,10 @@ export default function Game() {
         <div className="screen">
           {lines.map((l, i) => {
             const isCurrent = i === lineIndex && lineIndex < lines.length;
-            const shown = isCurrent ? l.slice(0, charIndex) : l;
+            let shown = '';
+            if (i < lineIndex) shown = l; // already completed lines
+            else if (isCurrent) shown = l.slice(0, charIndex); // current typing line
+
             return (
               <div key={i} className={`row ${i === 0 ? 'title' : ''}`} style={{paddingBottom: i < lineIndex ? 8 : 6}}>
                 <span>{shown}</span>
@@ -223,7 +237,9 @@ export default function Game() {
             );
           })}
 
-          <div className="row" style={{marginTop:10}}>&gt;_ SYSTEM READY -- AWAITING COMMAND <span className="cursor" /></div>
+          {lineIndex >= lines.length ? (
+            <div className="row" style={{marginTop:10}}>&gt;_ SYSTEM READY -- AWAITING COMMAND<span className="cursor" /></div>
+          ) : null}
         </div>
 
         <div style={{position:'absolute',inset:0,pointerEvents:'none'}} aria-hidden>
@@ -232,6 +248,7 @@ export default function Game() {
           <div className="speck" style={{left:'52%',top:'22%'}} />
           <div className="speck" style={{left:'74%',top:'56%'}} />
         </div>
+        <audio ref={clickAudioRef} src="/sounds/key_1.mp3" preload="auto" aria-hidden />
       </div>
     </main>
   );

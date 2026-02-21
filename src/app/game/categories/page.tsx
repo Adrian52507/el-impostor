@@ -3,6 +3,8 @@
 import React, { useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 export default function Categories() {
   const sp = useSearchParams();
   const players = sp?.get("players") ?? "?";

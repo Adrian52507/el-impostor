@@ -45,6 +45,11 @@ export default function CategoriesPage() {
           .cat-header{flex-wrap:wrap;align-items:center}
           .cat-meta{width:100%;text-align:left;font-size:13px}
         }
+
+        @media (min-width:421px) and (max-width:950px){
+          .cat-wrap{min-height:565px}
+          .cat-list{max-height:375px} /* Reduce list height on medium screens to fit better */
+        }
       `}</style>
 
       <Suspense fallback={<div style={{color:'#00FF41'}}>Cargando...</div>}>

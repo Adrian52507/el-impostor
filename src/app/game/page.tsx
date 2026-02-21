@@ -141,7 +141,7 @@ export default function Game() {
         @media (max-width:640px){.console{padding:12px;height:90vh}}
         /* Mobile phone adjustments */
         @media (max-width:420px){
-          .console{width:90%;padding:10px;height:95vh;gap:10px}
+          .console{width:90%;padding:10px;height:83vh;gap:10px}
           .console .top{flex-direction:column;align-items:center;gap:10px}
           .brand{font-size:16px;padding:6px 0}
           .controls{flex-direction:column;align-items:stretch;gap:10px;width:100%}
@@ -154,7 +154,7 @@ export default function Game() {
           .cursor{width:8px;height:16px}
         }
         @media (min-width:421px) and (max-width:950px){
-          .console{margin-right:20px;margin-left:20px;} .top{flex-wrap:wrap;align-items:center;gap:12px}
+          .console{margin-top:100px;margin-bottom:100px;margin-left:20px;margin-right:20px;height:70vh;} .top{flex-wrap:wrap;align-items:center;gap:12px}
           .controls{width:100%;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
           .setting{flex:0 1 auto;min-width:120px}
           .cmds{display:flex;flex-wrap:wrap;gap:8px}

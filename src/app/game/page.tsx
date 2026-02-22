@@ -15,7 +15,7 @@ export default function Game() {
     "EL FINGIDAZO",
     "ACCESO: AUTORIZADO",
     "INICIALIZANDO...",
-    "ES TIEMPO DE ESCOGER EL NÚMERO DE JUGADORES E IMPOSTORES PARA INICIAR",
+    "ES TIEMPO DE ESCOGER EL NÚMERO DE JUGADORES Y FINGIDAZOS PARA INICIAR.",
   ]);
 
   // Game settings
@@ -49,6 +49,7 @@ export default function Game() {
   const [lineIndex, setLineIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [glitch, setGlitch] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -101,10 +102,11 @@ export default function Game() {
 
   function startGame() {
     doGlitch();
-    // navigate to categories after the glitch animation
+    setIsLoading(true);
+    // show retro loading UI briefly before navigating
     setTimeout(() => {
       router.push(`/game/categories?players=${players}&impostors=${impostors}`);
-    }, 260);
+    }, 1200);
   }
 
   const router = useRouter();
@@ -117,9 +119,10 @@ export default function Game() {
         .console{width:94%;max-width:980px;height:84vh;border:1px solid var(--g);padding:20px;display:flex;flex-direction:column;gap:14px;background:#000;font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;color:var(--g);} 
         .console .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--g);padding-bottom:8px}
         .brand{text-transform:uppercase;letter-spacing:2px;font-size:18px;text-shadow:0 0 6px var(--g),0 0 16px var(--gd);padding:6px 0}
-        .cmds{display:flex;gap:8px}
+        .cmds{display:flex;gap:8px;margin:0px 0px 5px 0px}
         .controls{display:flex;align-items:center;gap:12px}
         .setting{display:flex;align-items:center;gap:8px}
+        .setting-label{font-size:12px}
         .value{min-width:36px;text-align:center}
         .cmd{border:1px solid var(--g);padding:6px 10px;background:transparent;color:var(--g);text-transform:uppercase;font-size:12px;cursor:pointer;border-radius:6px}
         .cmd:hover{color:var(--gh);box-shadow:0 0 10px var(--gh);border-color:var(--gh)}
@@ -129,6 +132,19 @@ export default function Game() {
         .row{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--g);text-transform:uppercase;font-size:16px;line-height:1.1;text-shadow:0 0 6px var(--g),0 0 12px var(--gd);text-align:center}
         .row.title{font-size:26px;font-weight:700}
         .cursor{display:inline-block;width:10px;height:18px;background:var(--g);margin-left:6px;vertical-align:middle;animation:blink 1s steps(2,start) infinite}
+        /* Retro RUN loading UI */
+        .run-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;background:linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.6));}
+        .run-card{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;color:var(--g);padding:18px 22px;border-radius:6px;border:1px solid rgba(0,255,65,0.08);background:rgba(0,0,0,0.25);box-shadow:0 0 18px rgba(0,255,65,0.04);backdrop-filter:blur(2px);}
+        .run-title{font-size:20px;letter-spacing:2px;text-transform:uppercase;text-shadow:0 0 8px var(--g),0 0 14px rgba(0,143,17,0.4)}
+        .run-dots{margin-left:8px;display:inline-block}
+        .run-dots span{display:inline-block;margin-left:6px;color:var(--g);opacity:0.2;transform:translateY(0);animation:runDot 1.05s infinite}
+        .run-dots span:nth-child(1){animation-delay:0s}
+        .run-dots span:nth-child(2){animation-delay:0.12s}
+        .run-dots span:nth-child(3){animation-delay:0.24s}
+        @keyframes runDot{0%{opacity:0.18;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}100%{opacity:0.18;transform:translateY(0)}}
+        .run-bar{width:220px;height:10px;margin-top:10px;background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.06);border-radius:3px;overflow:hidden;position:relative}
+        .run-bar:before{content:'';position:absolute;left:-40%;top:0;bottom:0;width:40%;background:linear-gradient(90deg,rgba(0,255,65,0.12),rgba(0,255,65,0.32),rgba(0,255,65,0.12));animation:barMove 1.6s linear infinite}
+        @keyframes barMove{0%{transform:translateX(0)}100%{transform:translateX(300%)}}
         @keyframes blink{50%{opacity:0}} 
         @keyframes glitchFrame{0%{transform:translate(0,0)}25%{transform:translate(-2px,0)}50%{transform:translate(2px,0)}75%{transform:translate(-1px,0)}100%{transform:translate(0,0)}}
         /* scanlines */
@@ -156,18 +172,27 @@ export default function Game() {
         @media (min-width:421px) and (max-width:950px){
           .console{margin-top:100px;margin-bottom:100px;margin-left:20px;margin-right:20px;height:70vh;} .top{flex-wrap:wrap;align-items:center;gap:12px}
           .controls{width:100%;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
-          .setting{flex:0 1 auto;min-width:120px}
-          .cmds{display:flex;flex-wrap:wrap;gap:8px}
-          .cmd{flex:0 0 auto}
+          .setting{flex:0 1 auto;min-width:120px;align-items:center}
+           .setting-label{font-size:13px}
+           .cmds{display:flex;flex-wrap:wrap;gap:8px}
+           .cmd{flex:0 0 auto}
         }
       `}</style>
 
           <div style={{position:'relative'}} className={`console ${glitch ? 'glitch' : ''}`}>
+        {isLoading ? (
+          <div className="run-overlay" role="status" aria-live="polite">
+            <div className="run-card">
+              <div className="run-title">CARGANDO<span className="run-dots"><span>.</span><span>.</span><span>.</span></span></div>
+              <div className="run-bar" />
+            </div>
+          </div>
+        ) : null}
         <div className="top">
           <div className="brand">SYSTEM: SECURE_TERMINAL</div>
           <div className="controls">
             <div className="setting">
-              <div style={{fontSize:12,color:COLORS.primary,textTransform:'uppercase'}}>Jugadores</div>
+                  <div className="setting-label" style={{color:COLORS.primary,textTransform:'uppercase'}}>Jugadores</div>
               <div style={{display:'flex',alignItems:'center',gap:6}}>
                 <button
                   className="cmd"
@@ -192,7 +217,7 @@ export default function Game() {
             </div>
 
             <div className="setting">
-              <div style={{fontSize:12,color:COLORS.primary,textTransform:'uppercase'}}>Impostores</div>
+              <div style={{fontSize:12,color:COLORS.primary,textTransform:'uppercase'}}>Fingidazos</div>
               <div style={{display:'flex',alignItems:'center',gap:6}}>
                 <button
                   className="cmd"
@@ -217,7 +242,7 @@ export default function Game() {
             </div>
 
             <div className="cmds">
-              <button className="cmd" onClick={() => startGame()} onMouseDown={playClickSound}>RUN</button>
+              <button className="cmd" onClick={() => startGame()} onMouseDown={playClickSound} disabled={isLoading}>RUN</button>
             </div>
           </div>
         </div>

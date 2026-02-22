@@ -14,6 +14,8 @@ export default function CategoriesClient() {
     Celebridades: '🌟',
     Animales: '🐾',
     Comida: '🍔',
+    Disney: '🏰',
+    Perú: '🦙',
   };
 
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -35,7 +37,8 @@ export default function CategoriesClient() {
     Celebridades: 'Famosos, celebridades y figuras públicas reconocidas mundialmente.',
     Animales: 'Especies, mascotas y criaturas del reino animal, domésticas y salvajes.',
     Comida: 'Platos, recetas, ingredientes y sabores de distintas cocinas al rededor del mundo.',
-  };
+    Disney: 'Personajes, películas y momentos mágicos del mundo de Disney.',    
+    Perú: 'Cosas, lugares y elementos icónicos de la cultura peruana.',  };
 
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const router = useRouter();
@@ -48,7 +51,7 @@ export default function CategoriesClient() {
           <div className="cat-title">CATEGORÍAS</div>
           <div className="cat-meta">
             <div>Jugadores: <strong>{players}</strong></div>
-            <div>Impostores: <strong>{impostors}</strong></div>
+            <div>Fingidazos: <strong>{impostors}</strong></div>
           </div>
         </div>
 
@@ -62,6 +65,8 @@ export default function CategoriesClient() {
             'Celebridades',
             'Animales',
             'Comida',
+            'Disney',
+            'Perú',
           ].map((cat) => (
             <button
               key={cat}

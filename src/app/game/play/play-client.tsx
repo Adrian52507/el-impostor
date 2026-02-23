@@ -119,6 +119,7 @@ export function PlayClient() {
   }
 
   const curPlayer = players[current];
+  const revealRatio = Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1);
 
   return (
     <main style={{ background: "#000" }} className="w-full h-screen flex items-center justify-center">
@@ -152,11 +153,10 @@ export function PlayClient() {
             <div
               className="backCard"
               aria-hidden={false}
-              style={() => ({})}
               style={{
                 // reveal ratio based on dragY (or fully revealed if player already marked revealed)
-                opacity: Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1),
-                transform: `translateY(${12 * (1 - Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1))}px)`,
+                opacity: revealRatio,
+                transform: `translateY(${12 * (1 - revealRatio)}px)`,
                 transition: isDragging ? "none" : "opacity 160ms ease, transform 160ms ease",
                 pointerEvents: (curPlayer && curPlayer.revealed) || dragY > 60 ? "auto" : "none",
               }}

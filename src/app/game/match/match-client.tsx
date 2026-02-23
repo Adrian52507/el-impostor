@@ -29,7 +29,7 @@ export function MatchClient() {
       `}</style>
 
       <div className="wrap" style={{textAlign:'center'}}>
-        <div className="headline">¡Juego listo!</div>
+        <div className="headline">*** GAME READY ***</div>
         <div className="meta">Categoría: <strong>{cat}</strong></div>
         <div className="meta">Jugadores: <strong>{players}</strong> — Fingidazos: <strong>{impostors}</strong></div>
         <div style={{display:'flex',gap:12,justifyContent:'center',marginTop:12}}>

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import CategoriesClient from "./categories-client";
+import { LoadingOverlay } from "../LoadingOverlay";
 
 export const dynamic = 'force-dynamic';
 
@@ -29,19 +30,7 @@ export default function CategoriesPage() {
         .play-btn:disabled{opacity:0.35;cursor:not-allowed}
         .play-btn:hover:not(:disabled){color:var(--gh,#39FF14);box-shadow:0 0 10px var(--gh,#39FF14);border-color:var(--gh,#39FF14)}
 
-        /* Retro RUN fallback (match Game loading UI) */
-        .run-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:9999;background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.7));}
-        .run-card{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;color:#00FF41;padding:18px 22px;border-radius:6px;border:1px solid rgba(0,255,65,0.08);background:rgba(0,0,0,0.25);box-shadow:0 0 18px rgba(0,255,65,0.04);backdrop-filter:blur(2px)}
-        .run-title{font-size:20px;letter-spacing:2px;text-transform:uppercase;text-shadow:0 0 8px #00FF41,0 0 14px rgba(0,143,17,0.4)}
-        .run-dots{margin-left:8px;display:inline-block}
-        .run-dots span{display:inline-block;margin-left:6px;color:#00FF41;opacity:0.2;transform:translateY(0);animation:runDot 1.05s infinite}
-        .run-dots span:nth-child(1){animation-delay:0s}
-        .run-dots span:nth-child(2){animation-delay:0.12s}
-        .run-dots span:nth-child(3){animation-delay:0.24s}
-        @keyframes runDot{0%{opacity:0.18;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}100%{opacity:0.18;transform:translateY(0)}}
-        .run-bar{width:220px;height:10px;margin-top:10px;background:rgba(0,255,65,0.04);border:1px solid rgba(0,255,65,0.06);border-radius:3px;overflow:hidden;position:relative}
-        .run-bar:before{content:'';position:absolute;left:-40%;top:0;bottom:0;width:40%;background:linear-gradient(90deg,rgba(0,255,65,0.12),rgba(0,255,65,0.32),rgba(0,255,65,0.12));animation:barMove 1.6s linear infinite}
-        @keyframes barMove{0%{transform:translateX(0)}100%{transform:translateX(300%)}}
+
 
         /* Mobile adjustments */
         @media (max-width:420px){
@@ -66,16 +55,7 @@ export default function CategoriesPage() {
         }
       `}</style>
 
-      <Suspense
-        fallback={
-          <div className="run-overlay" role="status" aria-live="polite">
-            <div className="run-card">
-              <div className="run-title">CARGANDO<span className="run-dots"><span>.</span><span>.</span><span>.</span></span></div>
-              <div className="run-bar" />
-            </div>
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingOverlay />}>
         <CategoriesClient />
       </Suspense>
     </main>

@@ -124,11 +124,57 @@ export function PlayClient() {
   return (
     <main style={{ background: "#000" }} className="w-full h-screen flex items-center justify-center">
       <style>{`
+        @keyframes glitch {
+          0% {
+            transform: translate(0, 0);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+          }
+          10% {
+            transform: translate(-3px, 2px);
+            clip-path: polygon(0 5%, 100% 0, 100% 95%, 0 100%);
+          }
+          20% {
+            transform: translate(2px, -2px);
+            clip-path: polygon(0 0, 100% 8%, 100% 100%, 0 92%);
+          }
+          30% {
+            transform: translate(-2px, 1px);
+            clip-path: polygon(0 2%, 100% 0, 100% 98%, 0 100%);
+          }
+          40% {
+            transform: translate(3px, -1px);
+            clip-path: polygon(0 0, 100% 3%, 100% 100%, 0 97%);
+          }
+          50% {
+            transform: translate(-1px, 0);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+          }
+          60% {
+            transform: translate(2px, 2px);
+            clip-path: polygon(0 7%, 100% 0, 100% 93%, 0 100%);
+          }
+          70% {
+            transform: translate(-3px, -1px);
+            clip-path: polygon(0 0, 100% 6%, 100% 100%, 0 94%);
+          }
+          80% {
+            transform: translate(1px, 1px);
+            clip-path: polygon(0 1%, 100% 0, 100% 99%, 0 100%);
+          }
+          90% {
+            transform: translate(-2px, 0);
+            clip-path: polygon(0 0, 100% 4%, 100% 100%, 0 96%);
+          }
+          100% {
+            transform: translate(0, 0);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+          }
+        }
         .wrap{color:#00FF41;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;padding:18px;border:1px solid #00FF41;max-width:760px;width:94%;position:relative;overflow:hidden;height: min(78vh, 720px);}
         .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none}
         .cardContainer{position:absolute;inset:0;box-sizing:border-box;padding:18px;display:flex;align-items:center;justify-content:center;z-index:40}
         .backCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:28px;background:#00FF41;color:#000;box-shadow:0 6px 18px rgba(0,0,0,0.35);z-index:1}
-        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;animation:glitch 0.4s steps(10, end)}
         .frontCard.closed{background:#000}
         .frontCard .title{font-size:20px;font-weight:700}
         .frontCard .role{margin-top:10px;font-size:16px}
@@ -185,6 +231,7 @@ export function PlayClient() {
             </div>
 
             <div
+              key={current}
               className={`frontCard ${curPlayer && curPlayer.revealed ? "open" : "closed"}`}
               role="button"
               aria-label={`Tarjeta jugador ${current + 1}`}
@@ -253,7 +300,7 @@ export function PlayClient() {
 
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
                   <div style={{ textAlign: "center" }} className="hint">
-                    Jugador {current + 1} de {players.length} — arrastra la tarjeta hacia arriba para ver
+                    Jugador {current + 1} de {players.length}
                   </div>
                   <div className="controls">
                     <button
@@ -261,7 +308,7 @@ export function PlayClient() {
                       onClick={nextPlayer}
                       disabled={!curPlayer || !curPlayer.revealed}
                     >
-                      {current + 1 < players.length ? "Siguiente jugador" : "Ir al juego"}
+                      {current + 1 < players.length ? "Siguiente jugador" : "Iniciar juego"}
                     </button>
                   </div>
                 </div>

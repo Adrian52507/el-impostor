@@ -27,6 +27,7 @@ export function PlayClient() {
   const [dragY, setDragY] = useState(0);
   const [draggingRevealed, setDraggingRevealed] = useState(false);
   const lastVibrateRef = useRef<number>(0);
+  const lastHapticYRef = useRef<number | null>(null);
   const vibrateEnabled = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 
   function doVibrate(ms: number, force = false) {
@@ -48,6 +49,7 @@ export function PlayClient() {
     if (!t) return;
     doVibrate(10, true);
     dragStartRef.current = t.clientY;
+    lastHapticYRef.current = 0;
     setIsDragging(true);
   }
 
@@ -58,10 +60,20 @@ export function PlayClient() {
     if (!t) return;
     const dy = dragStartRef.current - t.clientY;
     setDragY(dy);
+    // Haptic detents: small pulse every ~12px moved to simulate a wheel/steps feel
+    try {
+      const last = lastHapticYRef.current ?? 0;
+      if (Math.abs(dy - last) > 12) {
+        doVibrate(10);
+        lastHapticYRef.current = dy;
+      }
+    } catch {}
+
     if (!draggingRevealed && dy > 60) {
       doVibrate(40, true);
     } else if (dy > 6) {
-      doVibrate(8);
+      // small continuous tick while dragging shallowly
+      doVibrate(6);
     }
     setDraggingRevealed(dy > 60);
   }
@@ -173,8 +185,8 @@ export function PlayClient() {
         .wrap{color:#00FF41;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;padding:18px;border:1px solid #00FF41;max-width:760px;width:94%;position:relative;overflow:hidden;height: min(78vh, 720px);}
         .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none}
         .cardContainer{position:absolute;inset:0;box-sizing:border-box;padding:18px;display:flex;align-items:center;justify-content:center;z-index:40}
-        .backCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:28px;background:#00FF41;color:#000;box-shadow:0 6px 18px rgba(0,0,0,0.35);z-index:1}
-        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;animation:glitch 0.4s steps(10, end)}
+        .backCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:0px;border:1px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:28px;background:#00FF41;color:#000;box-shadow:0 6px 18px rgba(0,0,0,0.35);z-index:1}
+        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:0px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto;animation:glitch 0.4s steps(10, end)}
         .frontCard.closed{background:#000}
         .frontCard .title{font-size:20px;font-weight:700}
         .frontCard .role{margin-top:10px;font-size:16px}
@@ -248,10 +260,20 @@ export function PlayClient() {
                 e.preventDefault();
                 const dy = dragStartRef.current - e.clientY; // positive when moving up
                 setDragY(dy);
+                // Haptic detents: small pulse every ~12px moved to simulate a wheel/steps feel
+                try {
+                  const last = lastHapticYRef.current ?? 0;
+                  if (Math.abs(dy - last) > 12) {
+                    doVibrate(10);
+                    lastHapticYRef.current = dy;
+                  }
+                } catch {}
+
                 if (!draggingRevealed && dy > 60) {
                   doVibrate(40, true);
                 } else if (dy > 6) {
-                  doVibrate(8);
+                  // small continuous tick while dragging shallowly
+                  doVibrate(6);
                 }
                 setDraggingRevealed(dy > 60);
               }}
@@ -259,6 +281,7 @@ export function PlayClient() {
                 try {(e.target as Element).releasePointerCapture?.(e.pointerId);} catch {}
                 setIsDragging(false);
                 dragStartRef.current = null;
+                lastHapticYRef.current = null;
                 setDragY(0);
                 if (draggingRevealed) {
                   revealCurrent();
@@ -270,6 +293,7 @@ export function PlayClient() {
                 try {(e.target as Element).releasePointerCapture?.(e.pointerId);} catch {}
                 setIsDragging(false);
                 dragStartRef.current = null;
+                lastHapticYRef.current = null;
                 setDragY(0);
                 setDraggingRevealed(false);
               }}

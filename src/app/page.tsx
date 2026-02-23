@@ -276,7 +276,7 @@ function Cube() {
         let color = "white";
         let extraScale = 1;
         
-        // 🔴 BARRIDO ROJO: También sincronizado
+        // 🟢 BARRIDO VERDE: también sincronizado
         const redSweepElapsedTime = Math.max(
           0,
           timelineRef.current.elapsedTime - (ANIMATION_CONFIG.textAppearanceDelay + ANIMATION_CONFIG.textRedSweepDelay)
@@ -285,10 +285,10 @@ function Cube() {
           redSweepElapsedTime / ANIMATION_CONFIG.textRedSweepDuration,
           1.0
         );
-        
+
         if (redSweepProgress > 0) {
           const sweepPeak = Math.sin(redSweepProgress * Math.PI);
-          color = `hsl(0, ${100 * sweepPeak}%, ${100 - 50 * sweepPeak}%)`;
+          color = `hsl(120, ${100 * sweepPeak}%, ${100 - 50 * sweepPeak}%)`;
           extraScale = 1 + sweepPeak * 0.3;
         }
         

@@ -27,6 +27,55 @@ export function PlayClient() {
   const [dragY, setDragY] = useState(0);
   const [draggingRevealed, setDraggingRevealed] = useState(false);
   const lastVibrateRef = useRef<number>(0);
+  const vibrateEnabled = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+
+  function doVibrate(ms: number, force = false) {
+    if (!vibrateEnabled) return;
+    const now = Date.now();
+    const minInterval = 80;
+    if (force || now - lastVibrateRef.current > minInterval) {
+      try {
+        navigator.vibrate(ms);
+      } catch {}
+      lastVibrateRef.current = now;
+    }
+  }
+
+  function handleTouchStart(ev: React.TouchEvent) {
+    if (!curPlayer) return;
+    ev.preventDefault();
+    const t = ev.touches[0];
+    if (!t) return;
+    doVibrate(10, true);
+    dragStartRef.current = t.clientY;
+    setIsDragging(true);
+  }
+
+  function handleTouchMove(ev: React.TouchEvent) {
+    if (!isDragging || dragStartRef.current === null) return;
+    ev.preventDefault();
+    const t = ev.touches[0];
+    if (!t) return;
+    const dy = dragStartRef.current - t.clientY;
+    setDragY(dy);
+    if (!draggingRevealed && dy > 60) {
+      doVibrate(40, true);
+    } else if (dy > 6) {
+      doVibrate(8);
+    }
+    setDraggingRevealed(dy > 60);
+  }
+
+  function handleTouchEnd() {
+    setIsDragging(false);
+    dragStartRef.current = null;
+    setDragY(0);
+    if (draggingRevealed) {
+      revealCurrent();
+      doVibrate(30, true);
+    }
+    setTimeout(() => setDraggingRevealed(false), 120);
+  }
 
   useEffect(() => {
     // generate players and assign roles
@@ -77,9 +126,9 @@ export function PlayClient() {
         .wrap{color:#00FF41;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;padding:18px;border:1px solid #00FF41;max-width:760px;width:94%;position:relative;overflow:hidden;height: min(78vh, 720px);}
         .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none}
         .cardContainer{position:absolute;inset:0;box-sizing:border-box;padding:18px;display:flex;align-items:center;justify-content:center;z-index:40}
-        .backCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#00FF41;color:#000;box-shadow:0 6px 18px rgba(0,0,0,0.35);z-index:1}
-        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.12);cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}
-        .frontCard.closed{background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.25));}
+        .backCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:28px;background:#00FF41;color:#000;box-shadow:0 6px 18px rgba(0,0,0,0.35);z-index:1}
+        .frontCard{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;border:1px solid rgba(0,255,65,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;cursor:pointer;z-index:2;touch-action:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+        .frontCard.closed{background:#000}
         .frontCard .title{font-size:20px;font-weight:700}
         .frontCard .role{margin-top:10px;font-size:16px}
         .controls{margin-top:18px;display:flex;gap:12px;align-items:center;justify-content:center}
@@ -102,12 +151,14 @@ export function PlayClient() {
           <div className="cardContainer" aria-hidden={false}>
             <div
               className="backCard"
-              aria-hidden={!draggingRevealed}
+              aria-hidden={false}
+              style={() => ({})}
               style={{
-                opacity: draggingRevealed ? 1 : 0,
-                transform: draggingRevealed ? "translateY(0)" : "translateY(12px)",
-                transition: "opacity 160ms ease, transform 160ms ease",
-                pointerEvents: draggingRevealed ? "auto" : "none",
+                // reveal ratio based on dragY (or fully revealed if player already marked revealed)
+                opacity: Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1),
+                transform: `translateY(${12 * (1 - Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1))}px)`,
+                transition: isDragging ? "none" : "opacity 160ms ease, transform 160ms ease",
+                pointerEvents: (curPlayer && curPlayer.revealed) || dragY > 60 ? "auto" : "none",
               }}
             >
               {!curPlayer ? (
@@ -140,10 +191,7 @@ export function PlayClient() {
               onPointerDown={(e) => {
                 if (!curPlayer) return;
                 e.preventDefault();
-                if (e.pointerType === "touch") {
-                  navigator.vibrate?.(10);
-                  lastVibrateRef.current = Date.now();
-                }
+                doVibrate(10, true);
                 (e.target as Element).setPointerCapture?.(e.pointerId);
                 dragStartRef.current = e.clientY;
                 setIsDragging(true);
@@ -153,21 +201,12 @@ export function PlayClient() {
                 e.preventDefault();
                 const dy = dragStartRef.current - e.clientY; // positive when moving up
                 setDragY(dy);
-                // haptic feedback on touch devices while dragging, throttled
-                if (e.pointerType === "touch") {
-                  const now = Date.now();
-                  if (!draggingRevealed && dy > 60) {
-                    // crossed threshold: stronger vibration
-                    navigator.vibrate?.(40);
-                    lastVibrateRef.current = now;
-                  } else if (dy > 6 && now - lastVibrateRef.current > 120) {
-                    // light tick while dragging
-                    navigator.vibrate?.(8);
-                    lastVibrateRef.current = now;
-                  }
+                if (!draggingRevealed && dy > 60) {
+                  doVibrate(40, true);
+                } else if (dy > 6) {
+                  doVibrate(8);
                 }
-                if (dy > 60) setDraggingRevealed(true);
-                else setDraggingRevealed(false);
+                setDraggingRevealed(dy > 60);
               }}
               onPointerUp={(e) => {
                 try {(e.target as Element).releasePointerCapture?.(e.pointerId);} catch {}
@@ -176,7 +215,7 @@ export function PlayClient() {
                 setDragY(0);
                 if (draggingRevealed) {
                   revealCurrent();
-                  if ((e as any).pointerType === "touch") navigator.vibrate?.(30);
+                  doVibrate(30, true);
                 }
                 setTimeout(() => setDraggingRevealed(false), 120);
               }}
@@ -187,6 +226,10 @@ export function PlayClient() {
                 setDragY(0);
                 setDraggingRevealed(false);
               }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
               style={{
                 transform: isDragging ? `translateY(-${Math.min(dragY, 160)}px)` : undefined,
                 transition: isDragging ? "none" : "transform 220ms ease",

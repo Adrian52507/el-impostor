@@ -28,29 +28,29 @@ export function MatchClient() {
         @keyframes pulse{0%{transform:scale(1);box-shadow:0 0 6px rgba(0,255,65,0.06)}50%{transform:scale(1.015);box-shadow:0 0 18px rgba(0,255,65,0.18)}100%{transform:scale(1);box-shadow:0 0 6px rgba(0,255,65,0.06)}}
       `}</style>
 
-      <div className="wrap" style={{textAlign:'center'}}>
+      <div className="wrap" style={{ textAlign: 'center' }}>
         <div className="headline">*** GAME READY ***</div>
         <div className="meta">Categoría: <strong>{cat}</strong></div>
         <div className="meta">Jugadores: <strong>{players}</strong> — Fingidazos: <strong>{impostors}</strong></div>
-        <div style={{display:'flex',gap:12,justifyContent:'center',marginTop:12}}>
-          <div style={{textAlign:'center'}}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 12 }}>
+          <div style={{ textAlign: 'center' }}>
             <div className="meta">Palabra secreta</div>
-            <div style={{marginTop:8}}>
+            <div style={{ marginTop: 8 }}>
               {!showSecret ? (
                 <button className="btn pulse" onClick={() => setShowSecret(true)}>Tocar para revelar</button>
               ) : (
-                <div style={{marginTop:8,fontSize:16}}><strong>{secret}</strong></div>
+                <div style={{ marginTop: 8, fontSize: 16 }}><strong>{secret}</strong></div>
               )}
             </div>
           </div>
 
-          <div style={{textAlign:'center'}}>
+          <div style={{ textAlign: 'center' }}>
             <div className="meta">Fingidazo(s)</div>
-            <div style={{marginTop:8}}>
+            <div style={{ marginTop: 8 }}>
               {!showFing ? (
                 <button className="btn pulse" onClick={() => setShowFing(true)}>Tocar para revelar</button>
               ) : (
-                <div style={{marginTop:8,fontSize:16}}>
+                <div style={{ marginTop: 8, fontSize: 16 }}>
                   {fingIndices.length ? (
                     <>
                       {fingIndices.length === 1 ? (
@@ -70,6 +70,17 @@ export function MatchClient() {
 
         <div className="start">
           <button className="btn" onClick={() => router.push('/game')}>Volver al menú</button>
+        </div>
+      </div>
+
+      <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 80 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <img
+            src="/img/qr_yape.png"
+            alt="QR para Yape"
+            style={{ width: 64, height: 'auto', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)' }}
+          />
+          <div style={{ color: '#00FF41', fontSize: 12, fontFamily: 'var(--font-quicksand), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', fontWeight: 700 }}>Yape</div>
         </div>
       </div>
     </main>

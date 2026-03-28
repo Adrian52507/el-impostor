@@ -9,6 +9,7 @@ export function MatchClient() {
   const cat = sp?.get("cat") ?? "Películas";
   const players = sp?.get("players") ?? "?";
   const impostors = sp?.get("impostors") ?? "?";
+  const names = sp?.get("names") ?? "";
   const secret = sp?.get("secret") ?? "(oculta)";
   const fingParam = sp?.get("fing") ?? "";
   const fingIndices = fingParam ? fingParam.split(",").map((s) => parseInt(s, 10)).filter(Boolean) : [];
@@ -54,9 +55,9 @@ export function MatchClient() {
                   {fingIndices.length ? (
                     <>
                       {fingIndices.length === 1 ? (
-                        <span>Jugador <strong>{fingIndices[0]}</strong></span>
+                        <strong><span>Jugador {fingIndices[0]}</span></strong>
                       ) : (
-                        <span>Jugadores <strong>{fingIndices.join(', ')}</strong></span>
+                        <strong><span>Jugadores {fingIndices.join(', ')}</span></strong>
                       )}
                     </>
                   ) : (
@@ -68,7 +69,16 @@ export function MatchClient() {
           </div>
         </div>
 
-        <div className="start">
+        <div className="start" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            className="btn"
+            onClick={() => {
+              const namesParam = names ? `&names=${encodeURIComponent(names)}` : "";
+              router.push(`/game/categories?players=${players}&impostors=${impostors}${namesParam}`);
+            }}
+          >
+            Escoger otra categoría
+          </button>
           <button className="btn" onClick={() => router.push('/game')}>Volver al menú</button>
         </div>
       </div>

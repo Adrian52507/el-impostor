@@ -106,7 +106,7 @@ export default function Game() {
     setIsLoading(true);
     // show retro loading UI briefly before navigating
     setTimeout(() => {
-      router.push(`/game/categories?players=${players}&impostors=${impostors}`);
+      router.push(`/game/names?players=${players}&impostors=${impostors}`);
     }, 1200);
   }
 

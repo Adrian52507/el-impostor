@@ -13,6 +13,15 @@ export function PlayClient() {
   const cat = sp?.get("cat") ?? "Películas";
   const playersParam = parseInt(sp?.get("players") ?? "3", 10) || 3;
   const impostorsParam = parseInt(sp?.get("impostors") ?? "1", 10) || 1;
+  const namesParam = sp?.get("names") ?? "";
+  let playerNames: string[] = [];
+  try {
+    if (namesParam) {
+      playerNames = JSON.parse(decodeURIComponent(namesParam));
+    }
+  } catch (e) {
+    playerNames = [];
+  }
 
   const playersCount = Math.max(3, Math.min(50, playersParam));
   const impostorsCount = Math.max(1, Math.min(Math.floor(playersCount / 2), impostorsParam));
@@ -26,30 +35,13 @@ export function PlayClient() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [draggingRevealed, setDraggingRevealed] = useState(false);
-  const lastVibrateRef = useRef<number>(0);
-  const lastHapticYRef = useRef<number | null>(null);
-  const vibrateEnabled = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
-
-  function doVibrate(ms: number, force = false) {
-    if (!vibrateEnabled) return;
-    const now = Date.now();
-    const minInterval = 80;
-    if (force || now - lastVibrateRef.current > minInterval) {
-      try {
-        navigator.vibrate(ms);
-      } catch {}
-      lastVibrateRef.current = now;
-    }
-  }
 
   function handleTouchStart(ev: React.TouchEvent) {
     if (!curPlayer) return;
     ev.preventDefault();
     const t = ev.touches[0];
     if (!t) return;
-    doVibrate(10, true);
     dragStartRef.current = t.clientY;
-    lastHapticYRef.current = 0;
     setIsDragging(true);
   }
 
@@ -60,21 +52,6 @@ export function PlayClient() {
     if (!t) return;
     const dy = dragStartRef.current - t.clientY;
     setDragY(dy);
-    // Haptic detents: small pulse every ~12px moved to simulate a wheel/steps feel
-    try {
-      const last = lastHapticYRef.current ?? 0;
-      if (Math.abs(dy - last) > 12) {
-        doVibrate(10);
-        lastHapticYRef.current = dy;
-      }
-    } catch {}
-
-    if (!draggingRevealed && dy > 60) {
-      doVibrate(40, true);
-    } else if (dy > 6) {
-      // small continuous tick while dragging shallowly
-      doVibrate(6);
-    }
     setDraggingRevealed(dy > 60);
   }
 
@@ -84,7 +61,6 @@ export function PlayClient() {
     setDragY(0);
     if (draggingRevealed) {
       revealCurrent();
-      doVibrate(30, true);
     }
     setTimeout(() => setDraggingRevealed(false), 120);
   }
@@ -122,10 +98,11 @@ export function PlayClient() {
     } else {
       // all seen -> go to match screen
       const fingParam = fingIndices.join(",");
+      const nextNamesParam = namesParam ? `&names=${encodeURIComponent(namesParam)}` : "";
       router.push(
         `/game/match?cat=${encodeURIComponent(cat)}&players=${playersCount}&impostors=${impostorsCount}&secret=${encodeURIComponent(
           secret
-        )}&fing=${encodeURIComponent(fingParam)}`
+        )}&fing=${encodeURIComponent(fingParam)}${nextNamesParam}`
       );
     }
   }
@@ -250,7 +227,6 @@ export function PlayClient() {
               onPointerDown={(e) => {
                 if (!curPlayer) return;
                 e.preventDefault();
-                doVibrate(10, true);
                 (e.target as Element).setPointerCapture?.(e.pointerId);
                 dragStartRef.current = e.clientY;
                 setIsDragging(true);
@@ -260,32 +236,15 @@ export function PlayClient() {
                 e.preventDefault();
                 const dy = dragStartRef.current - e.clientY; // positive when moving up
                 setDragY(dy);
-                // Haptic detents: small pulse every ~12px moved to simulate a wheel/steps feel
-                try {
-                  const last = lastHapticYRef.current ?? 0;
-                  if (Math.abs(dy - last) > 12) {
-                    doVibrate(10);
-                    lastHapticYRef.current = dy;
-                  }
-                } catch {}
-
-                if (!draggingRevealed && dy > 60) {
-                  doVibrate(40, true);
-                } else if (dy > 6) {
-                  // small continuous tick while dragging shallowly
-                  doVibrate(6);
-                }
                 setDraggingRevealed(dy > 60);
               }}
               onPointerUp={(e) => {
                 try {(e.target as Element).releasePointerCapture?.(e.pointerId);} catch {}
                 setIsDragging(false);
                 dragStartRef.current = null;
-                lastHapticYRef.current = null;
                 setDragY(0);
                 if (draggingRevealed) {
                   revealCurrent();
-                  doVibrate(30, true);
                 }
                 setTimeout(() => setDraggingRevealed(false), 120);
               }}
@@ -293,7 +252,6 @@ export function PlayClient() {
                 try {(e.target as Element).releasePointerCapture?.(e.pointerId);} catch {}
                 setIsDragging(false);
                 dragStartRef.current = null;
-                lastHapticYRef.current = null;
                 setDragY(0);
                 setDraggingRevealed(false);
               }}
@@ -324,7 +282,9 @@ export function PlayClient() {
 
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
                   <div style={{ textAlign: "center" }} className="hint">
-                    Jugador {current + 1} de {players.length}
+                    {playerNames.length > current && playerNames[current]
+                      ? playerNames[current]
+                      : `Jugador ${current + 1}`}
                   </div>
                   <div className="controls">
                     <button

@@ -40,6 +40,7 @@ export default function CategoriesClient() {
     Disney: 'Personajes, películas y momentos mágicos del mundo de Disney.',    
     Perú: 'Cosas, lugares y elementos icónicos de la cultura peruana.',  };
 
+  const names = sp?.get("names") ?? "";
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const router = useRouter();
 
@@ -47,7 +48,16 @@ export default function CategoriesClient() {
     <>
       <div className="cat-wrap">
         <div className="cat-header">
-          <a className="back-btn" href="/game" aria-label="Volver">←</a>
+          <button
+            className="back-btn"
+            aria-label="Volver"
+            onClick={() => {
+              const namesParam = names ? `&names=${encodeURIComponent(names)}` : "";
+              router.push(`/game/names?players=${players}&impostors=${impostors}${namesParam}`);
+            }}
+          >
+            ←
+          </button>
           <div className="cat-title">CATEGORÍAS</div>
           <div className="cat-meta">
             <div>Jugadores: <strong>{players}</strong></div>
@@ -96,7 +106,8 @@ export default function CategoriesClient() {
           disabled={!selectedCat}
           onClick={() => {
             if (!selectedCat) return;
-            router.push(`/game/play?cat=${encodeURIComponent(selectedCat)}&players=${players}&impostors=${impostors}`);
+            const namesParam = names ? `&names=${encodeURIComponent(names)}` : "";
+            router.push(`/game/play?cat=${encodeURIComponent(selectedCat)}&players=${players}&impostors=${impostors}${namesParam}`);
           }}
         >
           JUGAR

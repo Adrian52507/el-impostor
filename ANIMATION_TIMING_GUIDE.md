@@ -59,7 +59,7 @@ explosionDuration: 4.5,
 // ✅ TODO se ajustará automáticamente (más lento, más fluido)
 ```
 
-### Ejemplo 2: Quiero que el sonido se retrasedemore más
+### Ejemplo 2: Quiero que el sonido se demore más
 
 ```typescript
 // Antes: Suena a los 0.8 segundos

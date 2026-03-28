@@ -12,6 +12,27 @@ const COLORS = {
 };
 
 export default function Game() {
+  const specks = [
+    { left: "4%", top: "8%" },
+    { left: "8%", top: "14%" },
+    { left: "13%", top: "72%" },
+    { left: "19%", top: "29%" },
+    { left: "24%", top: "87%" },
+    { left: "30%", top: "40%" },
+    { left: "35%", top: "16%" },
+    { left: "41%", top: "62%" },
+    { left: "46%", top: "33%" },
+    { left: "52%", top: "22%" },
+    { left: "57%", top: "78%" },
+    { left: "63%", top: "47%" },
+    { left: "68%", top: "11%" },
+    { left: "74%", top: "56%" },
+    { left: "79%", top: "82%" },
+    { left: "84%", top: "27%" },
+    { left: "90%", top: "68%" },
+    { left: "95%", top: "41%" },
+  ];
+
   const [lines, setLines] = useState<string[]>([
     "EL FINGIDAZO",
     "ACCESO: AUTORIZADO",
@@ -142,7 +163,9 @@ export default function Game() {
         .console{animation:subtleFlicker 5.5s infinite}
         @keyframes subtleFlicker{0%,100%{filter:brightness(1)}50%{filter:brightness(0.985)}}
         /* pixel specks */
-        .speck{position:absolute;width:3px;height:3px;background:var(--g);opacity:0.07}
+        .speck{position:absolute;width:3px;height:3px;background:var(--g);opacity:0.16;animation:speckDrift 7s ease-in-out infinite alternate,speckBlink 1.8s steps(2,start) infinite;will-change:transform,opacity}
+        @keyframes speckDrift{0%{transform:translate(0,0)}25%{transform:translate(1px,-2px)}50%{transform:translate(-2px,1px)}75%{transform:translate(2px,2px)}100%{transform:translate(-1px,-1px)}}
+        @keyframes speckBlink{0%,100%{opacity:0.12}50%{opacity:0.2}}
         @media (max-width:640px){.console{padding:12px;height:90vh}}
         /* Mobile phone adjustments */
         @media (max-width:420px){
@@ -250,10 +273,18 @@ export default function Game() {
         </div>
 
         <div style={{position:'absolute',inset:0,pointerEvents:'none'}} aria-hidden>
-          <div className="speck" style={{left:'8%',top:'14%'}} />
-          <div className="speck" style={{left:'30%',top:'40%'}} />
-          <div className="speck" style={{left:'52%',top:'22%'}} />
-          <div className="speck" style={{left:'74%',top:'56%'}} />
+          {specks.map((speck, i) => (
+              <div
+                key={i}
+                className="speck"
+                style={{
+                  left: speck.left,
+                  top: speck.top,
+                  animationDuration: `${6 + (i % 5)}s, ${1.4 + (i % 4) * 0.25}s`,
+                  animationDelay: `${i * -0.28}s, ${i * -0.15}s`,
+                }}
+              />
+          ))}
         </div>
         <audio ref={clickAudioRef} src="/sounds/key_1.mp3" preload="auto" aria-hidden />
       </div>

@@ -16,6 +16,7 @@ export default function CategoriesClient() {
     Comida: '🍔',
     Disney: '🏰',
     Perú: '🦙',
+    Aleatorio: '🎲',
   };
 
   const hoverAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -38,7 +39,9 @@ export default function CategoriesClient() {
     Animales: 'Especies, mascotas y criaturas del reino animal, domésticas y salvajes.',
     Comida: 'Platos, recetas, ingredientes y sabores de distintas cocinas al rededor del mundo.',
     Disney: 'Personajes, películas y momentos mágicos del mundo de Disney.',    
-    Perú: 'Cosas, lugares y elementos icónicos de la cultura peruana.',  };
+    Perú: 'Cosas, lugares y elementos icónicos de la cultura peruana.',
+    Aleatorio: 'Una mezcla aleatoria de palabras de todas las categorías.',
+  };
 
   const names = sp?.get("names") ?? "";
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
@@ -77,6 +80,7 @@ export default function CategoriesClient() {
             'Comida',
             'Disney',
             'Perú',
+            'Aleatorio',
           ].map((cat) => (
             <button
               key={cat}

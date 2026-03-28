@@ -818,6 +818,18 @@ Perú: [
   "Pisco",
   "Amazonía",
   "Cordillera Blanca"
+],
+Aleatorio: [
+  "Carrillo",
+  "Fútbol",
+  "Batman",
+  "Taylor Swift",
+  "Tigre",
+  "Ceviche",
+  "Elsa",
+  "Machu Picchu",
+  "Mano",
+  "Breaking Bad"
 ]
 };
 

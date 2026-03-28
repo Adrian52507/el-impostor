@@ -78,7 +78,8 @@ export default function NamesClient() {
         .names-console .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--g);padding-bottom:8px}
         .names-brand{text-transform:uppercase;letter-spacing:2px;font-size:18px;text-shadow:0 0 6px var(--g),0 0 16px var(--gd);padding:6px 0}
         .names-meta{font-size:13px;opacity:0.8}
-        .names-screen{flex:1;padding:12px 0;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+        .names-screen{flex:1;padding:12px 0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;scrollbar-width:none;-ms-overflow-style:none}
+        .names-screen::-webkit-scrollbar{display:none}
         .name-row{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid rgba(0,255,65,0.3);border-radius:4px}
         .name-label{min-width:120px;font-size:13px;opacity:0.8}
         .name-input{flex:1;background:transparent;border:none;color:var(--g);font-family:inherit;font-size:14px;padding:4px 6px;outline:none}
@@ -92,7 +93,7 @@ export default function NamesClient() {
         .names-console{animation:subtleFlicker 5.5s infinite}
         @keyframes subtleFlicker{0%,100%{filter:brightness(1)}50%{filter:brightness(0.985)}}
         .speck{position:absolute;width:3px;height:3px;background:var(--g);opacity:0.07}
-        @media (max-width:640px){.names-console{padding:12px;height:90vh}}
+        @media (max-width:640px){.names-console{padding:12px;height:90vh}.names-brand{font-size:14px}.meta-sep{display:none}.names-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}}
         @media (max-width:420px){
           .names-console{width:90%;padding:10px;height:83vh;gap:10px}
           .names-brand{font-size:16px;padding:6px 0}
@@ -110,7 +111,7 @@ export default function NamesClient() {
         <div className="top">
           <div className="names-brand">SYSTEM: PLAYER_REGISTRY</div>
           <div className="names-meta">
-            Jugadores: <strong>{playersCount}</strong> | Fingidazos: <strong>{impostorsCount}</strong>
+            <strong>Jugadores</strong> {playersCount}<span className="meta-sep"> | </span><strong>Fingidazos</strong> {impostorsCount}
           </div>
         </div>
 

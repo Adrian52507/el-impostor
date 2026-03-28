@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { pickRandomWord } from "../../../lib/wordBank";
+import { LoadingOverlay } from "../LoadingOverlay";
 
 type Role = "fingidazo" | "normal";
 type Player = { id: number; role: Role; word?: string; revealed: boolean };
@@ -31,6 +32,7 @@ export function PlayClient() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [current, setCurrent] = useState(0);
   const [fingIndices, setFingIndices] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const dragStartRef = useRef<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -97,6 +99,7 @@ export function PlayClient() {
       setCurrent((c) => c + 1);
     } else {
       // all seen -> go to match screen
+      setIsLoading(true);
       const fingParam = fingIndices.join(",");
       const nextNamesParam = namesParam ? `&names=${encodeURIComponent(namesParam)}` : "";
       router.push(
@@ -301,6 +304,7 @@ export function PlayClient() {
           </div>
         </div>
       </div>
+      {isLoading ? <LoadingOverlay /> : null}
     </main>
   );
 }

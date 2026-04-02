@@ -31,6 +31,7 @@ export function MatchClient() {
   const [isPickingStarter, setIsPickingStarter] = React.useState(true);
   const [rouletteLabel, setRouletteLabel] = React.useState("...");
   const [starterLabel, setStarterLabel] = React.useState("");
+  const [passDirection, setPassDirection] = React.useState<"izquierda" | "derecha" | "">("");
 
   const playerLabels = React.useMemo(
     () =>
@@ -51,6 +52,7 @@ export function MatchClient() {
     setShowStarterOverlay(true);
     setIsPickingStarter(true);
     setStarterLabel("");
+    setPassDirection("");
 
     let tick = 0;
     const totalTicks = Math.max(18, playersCount * 8);
@@ -62,8 +64,10 @@ export function MatchClient() {
       if (tick >= totalTicks) {
         window.clearInterval(timer);
         const winner = playerLabels[Math.floor(Math.random() * playerLabels.length)];
+        const direction = Math.random() < 0.5 ? "izquierda" : "derecha";
         setRouletteLabel(winner);
         setStarterLabel(winner);
+        setPassDirection(direction);
         setIsPickingStarter(false);
       }
     }, 85);
@@ -124,18 +128,21 @@ export function MatchClient() {
         {showStarterOverlay ? (
           <div className="starter-overlay">
             <div className="starter-panel">
-              <div className="starter-title">Seleccionando jugador inicial...</div>
+              <div className="starter-title">
+                {isPickingStarter ? "Seleccionando jugador inicial..." : "Jugador inicial seleccionado"}
+              </div>
               <div className="starter-roulette" aria-live="polite">
                 <div className={`starter-name ${isPickingStarter ? "rolling" : ""}`}>{rouletteLabel}</div>
               </div>
-              <div className="starter-help">
-                {isPickingStarter ? "La ruleta está decidiendo quién empieza" : "Jugador inicial confirmado"}
-              </div>
+              {isPickingStarter ? (
+                <div className="starter-help">La ruleta está decidiendo quién empieza</div>
+              ) : null}
               {!isPickingStarter ? (
                 <>
                   <div className="starter-final">Empieza la partida: <strong>{starterLabel}</strong></div>
+                  <div className="starter-final">Pasa el teléfono hacia la <strong>{passDirection}</strong></div>
                   <div style={{ marginTop: 14 }}>
-                    <button className="btn pulse" onClick={() => setShowStarterOverlay(false)}>Entrar al match</button>
+                    <button className="btn pulse" onClick={() => setShowStarterOverlay(false)}>Entrar a la partida</button>
                   </div>
                 </>
               ) : null}

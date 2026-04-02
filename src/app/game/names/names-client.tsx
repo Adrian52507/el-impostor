@@ -8,16 +8,42 @@ export default function NamesClient() {
   const sp = useSearchParams();
   const playersCount = parseInt(sp?.get("players") ?? "3", 10) || 3;
   const impostorsCount = parseInt(sp?.get("impostors") ?? "1", 10) || 1;
+  const namesParam = sp?.get("names") ?? "";
 
   const [names, setNames] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [glitch, setGlitch] = useState(false);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize names array
+  // Initialize names array, preserving existing values when returning from categories.
   useEffect(() => {
-    setNames(Array(playersCount).fill(""));
-  }, [playersCount]);
+    let initialNames: string[] = [];
+
+    if (namesParam) {
+      try {
+        const parsed = JSON.parse(namesParam);
+        if (Array.isArray(parsed)) {
+          initialNames = parsed.map((value) => String(value ?? ""));
+        }
+      } catch {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(namesParam));
+          if (Array.isArray(parsed)) {
+            initialNames = parsed.map((value) => String(value ?? ""));
+          }
+        } catch {
+          initialNames = [];
+        }
+      }
+    }
+
+    const normalized = Array.from({ length: playersCount }, (_, idx) => {
+      const value = initialNames[idx] ?? "";
+      return value.substring(0, 20);
+    });
+
+    setNames(normalized);
+  }, [playersCount, namesParam]);
 
   function playClickSound() {
     const a = clickAudioRef.current;
@@ -82,7 +108,7 @@ export default function NamesClient() {
         .names-screen::-webkit-scrollbar{display:none}
         .name-row{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid rgba(0,255,65,0.3);border-radius:4px}
         .name-label{min-width:120px;font-size:13px;opacity:0.8}
-        .name-input{flex:1;background:transparent;border:none;color:var(--g);font-family:inherit;font-size:14px;padding:4px 6px;outline:none}
+        .name-input{flex:1;background:transparent;border:none;color:var(--g);font-family:inherit;font-size:16px;padding:4px 6px;outline:none}
         .name-input::placeholder{color:rgba(0,255,65,0.4)}
         .controls-names{display:flex;gap:8px;margin-top:12px;justify-content:center}
         .cmd{border:1px solid var(--g);padding:8px 14px;background:transparent;color:var(--g);text-transform:uppercase;font-size:12px;cursor:pointer;border-radius:6px}
@@ -100,7 +126,7 @@ export default function NamesClient() {
           .names-meta{font-size:12px}
           .name-row{gap:8px;padding:6px}
           .name-label{min-width:80px;font-size:12px}
-          .name-input{font-size:13px}
+          .name-input{font-size:16px}
           .cmd{padding:8px 12px;font-size:11px}
         }
       `}</style>

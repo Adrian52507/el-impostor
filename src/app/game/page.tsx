@@ -165,7 +165,7 @@ export default function Game() {
         /* pixel specks */
         .speck{position:absolute;width:3px;height:3px;background:var(--g);opacity:0.16;animation:speckDrift 7s ease-in-out infinite alternate,speckBlink 1.8s steps(2,start) infinite;will-change:transform,opacity}
         @keyframes speckDrift{0%{transform:translate(0,0)}25%{transform:translate(1px,-2px)}50%{transform:translate(-2px,1px)}75%{transform:translate(2px,2px)}100%{transform:translate(-1px,-1px)}}
-        @keyframes speckBlink{0%,100%{opacity:0.12}50%{opacity:0.2}}
+        @keyframes speckBlink{0%,100%{opacity:0.12}50%{opacity:0.4}}
         @media (max-width:640px){.console{padding:12px;height:90vh}}
         /* Mobile phone adjustments */
         @media (max-width:420px){

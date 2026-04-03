@@ -176,6 +176,16 @@ export function PlayClient() {
   }
 
   const curPlayer = players[current];
+  const otherImpostors =
+    curPlayer?.role === "fingidazo" && impostorsCount > 1
+      ? fingIndices
+          .filter((id) => id !== current + 1)
+          .map((id) => {
+            const idx = id - 1;
+            const name = playerNames[idx]?.trim();
+            return name ? name : `Jugador ${id}`;
+          })
+      : [];
   const revealRatio = Math.min(Math.max((curPlayer && curPlayer.revealed ? 1 : dragY / 120) || 0, 0), 1);
 
   return (
@@ -279,6 +289,11 @@ export function PlayClient() {
                       <div className="role" style={{ marginTop: 0, marginBottom: 16 }}>
                         <strong>FINGIDAZO 😈</strong>
                       </div>
+                      {otherImpostors.length > 0 ? (
+                        <div className="role" style={{ marginTop: 0 }}>
+                          Otros impostores: <strong>{otherImpostors.join(", ")}</strong>
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <>
